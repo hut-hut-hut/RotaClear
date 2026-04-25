@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import UploadScreen from './components/UploadScreen.jsx'
 import SetupScreen from './components/SetupScreen.jsx'
+import Layout from './components/Layout.jsx'
 
 function App() {
   const [screen, setScreen] = useState('upload')
@@ -44,7 +45,15 @@ function App() {
     return <SetupScreen rotaData={rotaData} onSetup={handleSetup} />
   }
 
-  return null
+  return (
+    <Layout
+      rotaData={rotaData}
+      selectedDoctor={selectedDoctor}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      onRemoveRota={handleRemoveRota}
+    />
+  )
 }
 
 export default App
