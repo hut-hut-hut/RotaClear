@@ -38,7 +38,7 @@ export default function DayPopup({ day, onClose, onGoToRules }) {
           <div>
             <div className="w-3 h-3 rounded-full bg-pink-400 mb-3" />
             <p className="text-sm text-gray-700 leading-relaxed">
-              This is a day you can request annual leave and it abides by the guidelines of the Rota Rules for the Emergency Department.
+              This is a day you can request annual leave.
             </p>
           </div>
         )}

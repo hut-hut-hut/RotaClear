@@ -1,5 +1,16 @@
 const LEAVE_CODES = new Set(['AL', 'SL', 'EDT', 'STT'])
 
+function isWeekend(isoDate) {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  const dow = new Date(y, m - 1, d).getDay() // 0=Sun, 6=Sat
+  return dow === 0 || dow === 6
+}
+
+function isNightShift(shiftTime) {
+  // Handles "22:00-08:30", "22:00 - 08:30", etc.
+  return shiftTime.startsWith('22:') || shiftTime.startsWith('22 ')
+}
+
 export function calculateLeaveEligibility(doctor, schedule, today) {
   const doctorSchedule = schedule[doctor] || {}
   const todayMs = new Date(today + 'T00:00:00').getTime()
@@ -7,7 +18,7 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
 
   return Object.entries(doctorSchedule)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, { shift, day }]) => {
+    .map(([date, { shift }]) => {
       const shiftTime = shift || ''
 
       // Empty cell (day off) or existing leave code — not a requestable shift
@@ -23,12 +34,12 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
       }
 
       // Condition 2: not a night shift
-      if (shiftTime.startsWith('22:00')) {
+      if (isNightShift(shiftTime)) {
         return { date, shiftTime, eligible: false, reason: 'No leave can be requested on night shifts.', isDayOff: false }
       }
 
-      // Condition 3: not a weekend
-      if (day === 'Saturday' || day === 'Sunday') {
+      // Condition 3: not a weekend (computed from date, not spreadsheet column)
+      if (isWeekend(date)) {
         return { date, shiftTime, eligible: false, reason: 'No leave can be requested on weekends.', isDayOff: false }
       }
 
