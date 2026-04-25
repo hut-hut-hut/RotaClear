@@ -11,6 +11,12 @@ function isNightShift(shiftTime) {
   return shiftTime.startsWith('22:') || shiftTime.startsWith('22 ')
 }
 
+function countColleaguesOnLeave(date, schedule, excludeDoctor) {
+  return Object.values(
+    Object.fromEntries(Object.entries(schedule).filter(([name]) => name !== excludeDoctor))
+  ).filter(days => days[date] && LEAVE_CODES.has(days[date].shift)).length
+}
+
 export function calculateLeaveEligibility(doctor, schedule, today) {
   const doctorSchedule = schedule[doctor] || {}
   const todayMs = new Date(today + 'T00:00:00').getTime()
@@ -43,7 +49,16 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
         return { date, shiftTime, eligible: false, reason: 'No leave can be requested on weekends.', isDayOff: false }
       }
 
-      // Condition 4 (colleague count) — implemented in step 8
+      // Condition 4: fewer than 6 colleagues on leave on this date
+      const colleaguesOnLeave = countColleaguesOnLeave(date, schedule, doctor)
+      if (colleaguesOnLeave >= 6) {
+        return {
+          date, shiftTime, eligible: false,
+          reason: `${colleaguesOnLeave} of your colleagues are already on leave on this date.`,
+          isDayOff: false,
+        }
+      }
+
       return { date, shiftTime, eligible: true, reason: null, isDayOff: false }
     })
 }
