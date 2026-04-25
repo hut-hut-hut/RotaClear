@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import UploadScreen from './components/UploadScreen.jsx'
+import SetupScreen from './components/SetupScreen.jsx'
 
 function App() {
   const [screen, setScreen] = useState('upload')
@@ -22,6 +23,12 @@ function App() {
     setScreen('setup')
   }
 
+  function handleSetup(doctor, mode) {
+    setSelectedDoctor(doctor)
+    setActiveTab(mode)
+    setScreen('main')
+  }
+
   function handleRemoveRota() {
     setRotaData(null)
     setSelectedDoctor(null)
@@ -31,6 +38,10 @@ function App() {
 
   if (screen === 'upload') {
     return <UploadScreen onRotaLoaded={handleRotaLoaded} />
+  }
+
+  if (screen === 'setup') {
+    return <SetupScreen rotaData={rotaData} onSetup={handleSetup} />
   }
 
   return null
