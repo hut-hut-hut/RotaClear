@@ -1,5 +1,162 @@
-export default function LeaveTab() {
+import { useState, useMemo } from 'react'
+import { calculateLeaveEligibility } from '../lib/leaveRules.js'
+import DayPopup from './DayPopup.jsx'
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function formatMonthHeader(year, month) {
+  return new Date(year, month - 1, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' })
+}
+
+function MonthCalendar({ year, month, dayMap, onDayClick }) {
+  const firstDay = new Date(year, month - 1, 1)
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const startOffset = (firstDay.getDay() + 6) % 7 // Mon=0 … Sun=6
+
   return (
-    <div className="text-gray-400 text-sm">Leave calendar coming in step 7.</div>
+    <div className="mb-8">
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+        {formatMonthHeader(year, month)}
+      </h3>
+
+      {/* Day-of-week headers */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {DAY_LABELS.map(label => (
+          <div key={label} className="text-center text-[11px] text-gray-400 font-medium py-1">
+            {label}
+          </div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: startOffset }, (_, i) => (
+          <div key={`pad-${i}`} className="min-h-[52px]" />
+        ))}
+
+        {Array.from({ length: daysInMonth }, (_, i) => {
+          const dayNum = i + 1
+          const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+          const day = dayMap[isoDate]
+
+          // Date not in rota period — show empty placeholder
+          if (!day) {
+            return <div key={isoDate} className="min-h-[52px]" />
+          }
+
+          const { eligible, shiftTime, isDayOff } = day
+
+          const bgClass = eligible
+            ? 'bg-pink-50 border border-pink-200 hover:bg-pink-100'
+            : isDayOff
+            ? 'bg-white border border-gray-100'
+            : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+
+          const numClass = eligible
+            ? 'text-pink-700 font-semibold'
+            : 'text-gray-400 font-medium'
+
+          const timeClass = eligible ? 'text-pink-400' : 'text-gray-400'
+
+          return (
+            <div
+              key={isoDate}
+              className={`min-h-[52px] rounded-lg p-1 flex flex-col items-center cursor-pointer transition-colors ${bgClass}`}
+              onClick={() => onDayClick(day)}
+            >
+              <span className={`text-xs ${numClass}`}>{dayNum}</span>
+              {shiftTime && !isDayOff && (
+                <span className={`text-[9px] leading-tight text-center mt-0.5 break-all ${timeClass}`}>
+                  {shiftTime}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export default function LeaveTab({ selectedDoctor, rotaData, onGoToRules }) {
+  const [selectedDay, setSelectedDay] = useState(null)
+
+  const today = useMemo(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }, [])
+
+  const days = useMemo(() => {
+    if (!rotaData || !selectedDoctor) return []
+    return calculateLeaveEligibility(selectedDoctor, rotaData.schedule, today)
+  }, [rotaData, selectedDoctor, today])
+
+  const dayMap = useMemo(() => {
+    const map = {}
+    for (const d of days) map[d.date] = d
+    return map
+  }, [days])
+
+  const monthGroups = useMemo(() => {
+    const keys = new Set()
+    for (const d of days) {
+      const [y, m] = d.date.split('-')
+      keys.add(`${y}-${m}`)
+    }
+    return [...keys].sort().map(key => {
+      const [y, m] = key.split('-')
+      return { year: parseInt(y, 10), month: parseInt(m, 10) }
+    })
+  }, [days])
+
+  const hasEligible = days.some(d => d.eligible)
+
+  function handleGoToRules() {
+    setSelectedDay(null)
+    if (onGoToRules) onGoToRules()
+  }
+
+  return (
+    <div className="max-w-2xl">
+      {/* Color key */}
+      <div className="flex gap-6 mb-6">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-12 rounded-lg bg-pink-50 border border-pink-200 flex flex-col items-center justify-center px-1">
+            <span className="text-[10px] font-semibold text-pink-700 leading-none">15</span>
+            <span className="text-[9px] text-pink-400 leading-tight mt-0.5 text-center">08:00-18:00</span>
+          </div>
+          <span className="text-sm text-gray-600">Eligible for leave</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-12 rounded-lg bg-gray-50 border border-gray-200 flex flex-col items-center justify-center px-1">
+            <span className="text-[10px] font-medium text-gray-400 leading-none">15</span>
+            <span className="text-[9px] text-gray-400 leading-tight mt-0.5 text-center">08:00-18:00</span>
+          </div>
+          <span className="text-sm text-gray-600">Not eligible</span>
+        </div>
+      </div>
+
+      {!hasEligible && days.length > 0 && (
+        <p className="text-sm text-gray-400 mb-6">No available dates to request for leave.</p>
+      )}
+
+      {monthGroups.map(({ year, month }) => (
+        <MonthCalendar
+          key={`${year}-${month}`}
+          year={year}
+          month={month}
+          dayMap={dayMap}
+          onDayClick={setSelectedDay}
+        />
+      ))}
+
+      {selectedDay && (
+        <DayPopup
+          day={selectedDay}
+          onClose={() => setSelectedDay(null)}
+          onGoToRules={handleGoToRules}
+        />
+      )}
+    </div>
   )
 }

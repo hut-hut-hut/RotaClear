@@ -51,7 +51,7 @@ export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChang
 
       {/* Active tab content */}
       <div className="flex-1 px-6 py-6">
-        {activeTab === 'leave' && <LeaveTab selectedDoctor={selectedDoctor} rotaData={rotaData} />}
+        {activeTab === 'leave' && <LeaveTab selectedDoctor={selectedDoctor} rotaData={rotaData} onGoToRules={() => onTabChange('rules')} />}
         {activeTab === 'swaps' && <SwapsTab selectedDoctor={selectedDoctor} rotaData={rotaData} />}
         {activeTab === 'rules' && <RotaRulesTab />}
       </div>
