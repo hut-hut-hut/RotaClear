@@ -34,6 +34,11 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
 
       const dateMs = new Date(date + 'T00:00:00').getTime()
 
+      // Past date
+      if (dateMs < todayMs) {
+        return { date, shiftTime, eligible: false, reason: 'This date has already passed. Therefore annual leave cannot be booked.', isDayOff: false }
+      }
+
       // Condition 1: at least 42 days from today
       if (dateMs < cutoffMs) {
         return { date, shiftTime, eligible: false, reason: 'This date is fewer than 6 weeks away.', isDayOff: false }
