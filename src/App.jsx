@@ -3,21 +3,41 @@ import UploadScreen from './components/UploadScreen.jsx'
 import SetupScreen from './components/SetupScreen.jsx'
 import Layout from './components/Layout.jsx'
 
-function App() {
-  const [screen, setScreen] = useState('upload')
-  const [rotaData, setRotaData] = useState(null)
-  const [selectedDoctor, setSelectedDoctor] = useState(null)
-  const [activeTab, setActiveTab] = useState('leave')
+const SESSION_KEY = 'rotaclear_session'
 
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function App() {
+  const saved = loadSession()
+
+  const [screen, setScreen] = useState(() => {
+    if (!saved) return 'upload'
+    // 'loading' is transient — never restore to it
+    return saved.screen === 'loading' ? 'main' : saved.screen
+  })
+  const [rotaData, setRotaData] = useState(saved?.rotaData || null)
+  const [selectedDoctor, setSelectedDoctor] = useState(saved?.selectedDoctor || null)
+  const [activeTab, setActiveTab] = useState(saved?.activeTab || 'leave')
+
+  // Persist session whenever state changes
   useEffect(() => {
-    if (!rotaData) return
-    const handler = (e) => {
-      e.preventDefault()
-      e.returnValue = ''
+    if (rotaData) {
+      try {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ screen, rotaData, selectedDoctor, activeTab }))
+      } catch {
+        // sessionStorage unavailable or full — silently ignore
+      }
+    } else {
+      sessionStorage.removeItem(SESSION_KEY)
     }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [rotaData])
+  }, [screen, rotaData, selectedDoctor, activeTab])
 
   function handleRotaLoaded(data) {
     setRotaData(data)
@@ -28,7 +48,6 @@ function App() {
     setSelectedDoctor(doctor)
     setActiveTab(mode)
     setScreen('loading')
-    // Double-RAF ensures the loading screen paints before the heavy computation runs
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setScreen('main')
@@ -37,6 +56,7 @@ function App() {
   }
 
   function handleRemoveRota() {
+    sessionStorage.removeItem(SESSION_KEY)
     setRotaData(null)
     setSelectedDoctor(null)
     setActiveTab('leave')
