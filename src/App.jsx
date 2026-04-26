@@ -27,7 +27,13 @@ function App() {
   function handleSetup(doctor, mode) {
     setSelectedDoctor(doctor)
     setActiveTab(mode)
-    setScreen('main')
+    setScreen('loading')
+    // Double-RAF ensures the loading screen paints before the heavy computation runs
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setScreen('main')
+      })
+    })
   }
 
   function handleRemoveRota() {
@@ -43,6 +49,15 @@ function App() {
 
   if (screen === 'setup') {
     return <SetupScreen rotaData={rotaData} onSetup={handleSetup} />
+  }
+
+  if (screen === 'loading') {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+        <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-500 text-sm">Loading your rota…</p>
+      </div>
+    )
   }
 
   return (

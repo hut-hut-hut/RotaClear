@@ -11,7 +11,7 @@ export default function EmailModal({ swap, selectedDoctor, onClose }) {
   const [copied, setCopied] = useState(false)
 
   const toAddress = 'imperial.smhed-shorota@nhs.net'
-  const emailBody = `Dear Rota Coordinator,\n\nI would like to arrange a swap with ${swap.partnerName} on ${formatDateLong(swap.myDate)} for the ${swap.myShift} shift. Please let me know if you have any questions.\n\n${selectedDoctor}`
+  const emailBody = `Dear Rota Coordinator,\n\nI would like to arrange a shift swap with ${swap.partnerName}.\n\nMy shift: ${formatDateLong(swap.myDate)} (${swap.myShift})\n${swap.partnerName}'s shift: ${formatDateLong(swap.partnerDate)} (${swap.partnerShift})\n\nPlease could you arrange this swap? Let me know if you have any questions.\n\n${selectedDoctor}`
   const fullText = `To: ${toAddress}\n\n${emailBody}`
 
   function handleCopy() {

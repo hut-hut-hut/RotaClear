@@ -9,7 +9,7 @@ export default function SetupScreen({ rotaData, onSetup }) {
   const doctors = rotaData.doctors
 
   const filtered = query.trim() === ''
-    ? []
+    ? doctors
     : doctors.filter(d => d.toLowerCase().includes(query.toLowerCase()))
 
   const noMatch = query.trim().length > 0 && filtered.length === 0
@@ -31,6 +31,11 @@ export default function SetupScreen({ rotaData, onSetup }) {
     setTimeout(() => setDropdownOpen(false), 150)
   }
 
+  function handleChevronMouseDown(e) {
+    e.preventDefault() // keep input focused
+    setDropdownOpen(o => !o)
+  }
+
   function handleGo() {
     if (!canGo) return
     onSetup(selectedDoctor, mode)
@@ -50,13 +55,25 @@ export default function SetupScreen({ rotaData, onSetup }) {
                 type="text"
                 value={query}
                 onChange={handleQueryChange}
-                onFocus={() => query.trim().length > 0 && setDropdownOpen(true)}
+                onFocus={() => setDropdownOpen(true)}
                 onBlur={handleBlur}
-                placeholder="Type your name…"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                placeholder="Select your name…"
+                className="w-full border border-gray-300 rounded-lg pl-4 pr-10 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-300"
               />
-              {dropdownOpen && query.trim().length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-md mt-1 z-10 max-h-48 overflow-y-auto">
+              {/* Chevron toggle */}
+              <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={handleChevronMouseDown}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-md mt-1 z-10 max-h-52 overflow-y-auto">
                   {noMatch ? (
                     <div className="px-4 py-2 text-gray-400 text-sm">Name not available</div>
                   ) : (
@@ -116,7 +133,7 @@ export default function SetupScreen({ rotaData, onSetup }) {
           <div className="flex flex-col gap-6 text-gray-600 justify-center">
             <div>
               <p className="font-semibold text-gray-800 mb-1">Step 1</p>
-              <p className="text-sm">Type your name into the drop-down menu</p>
+              <p className="text-sm">Click the dropdown to scroll through names, or type to search for yours</p>
             </div>
             <div>
               <p className="font-semibold text-gray-800 mb-1">Step 2</p>

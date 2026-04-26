@@ -1,5 +1,15 @@
 import * as XLSX from '@e965/xlsx'
 
+function serialToISO(serial) {
+  // Excel epoch is Dec 30, 1899 (accounts for Excel's 1900 leap year bug)
+  const excelEpoch = new Date(Date.UTC(1899, 11, 30))
+  const date = new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000)
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(date.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export async function parseRota(file) {
   const ext = file.name.split('.').pop().toLowerCase()
   if (ext !== 'xls' && ext !== 'xlsx') {
@@ -11,19 +21,31 @@ export async function parseRota(file) {
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
 
-  // Row 0: column headers — doctor names start at index 3
   const headerRow = rows[0] || []
-  const doctors = headerRow.slice(3).filter(name => name && String(name).trim() !== '')
+  const trackRow = rows[1] || []
 
-  if (doctors.length === 0) {
+  // Use track numbers (e.g. "1a", "2b") to identify valid doctor columns.
+  // This filters out EMPTY slots, Locum, Gap, and staffing-total columns.
+  const doctorCols = []
+  for (let i = 3; i < trackRow.length; i++) {
+    const track = trackRow[i]
+    if (track && /^\d+[ab]$/i.test(String(track).trim())) {
+      const name = headerRow[i]
+      const nameStr = name ? String(name).trim() : ''
+      if (nameStr && nameStr.toUpperCase() !== 'EMPTY') {
+        doctorCols.push({ idx: i, name: nameStr })
+      }
+    }
+  }
+
+  if (doctorCols.length === 0) {
     throw new Error('This rota is in a format that cannot be processed by this website.')
   }
 
-  // Row 1 (index 1): track numbers — skip
-  // Rows 2+ (index 2+): data rows
+  const doctors = doctorCols.map(d => d.name)
   const schedule = {}
   for (const doctor of doctors) {
-    schedule[String(doctor)] = {}
+    schedule[doctor] = {}
   }
 
   let rotaStart = null
@@ -31,23 +53,30 @@ export async function parseRota(file) {
 
   for (let i = 2; i < rows.length; i++) {
     const row = rows[i]
-    if (!row || !row[1]) continue
+    if (!row) continue
 
-    const rawDate = String(row[1]).trim()
-    const parts = rawDate.split('/')
-    if (parts.length !== 3) continue
+    const rawDate = row[1]
+    if (rawDate === null || rawDate === undefined) continue
 
-    const [day, month, year] = parts
-    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    let isoDate
+    if (typeof rawDate === 'number') {
+      isoDate = serialToISO(rawDate)
+    } else {
+      const parts = String(rawDate).trim().split('/')
+      if (parts.length !== 3) continue
+      const [d, m, y] = parts
+      isoDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+    }
+
     const dayName = row[2] ? String(row[2]).trim() : ''
 
     if (!rotaStart || isoDate < rotaStart) rotaStart = isoDate
     if (!rotaEnd || isoDate > rotaEnd) rotaEnd = isoDate
 
-    doctors.forEach((doctor, idx) => {
-      const cellValue = row[idx + 3]
+    doctorCols.forEach(({ idx, name }) => {
+      const cellValue = row[idx]
       const shift = cellValue !== undefined && cellValue !== null ? String(cellValue).trim() : ''
-      schedule[String(doctor)][isoDate] = { shift, day: dayName }
+      schedule[name][isoDate] = { shift, day: dayName }
     })
   }
 
@@ -55,5 +84,5 @@ export async function parseRota(file) {
     throw new Error('This rota is in a format that cannot be processed by this website.')
   }
 
-  return { doctors: doctors.map(String), schedule, rotaStart, rotaEnd }
+  return { doctors, schedule, rotaStart, rotaEnd }
 }

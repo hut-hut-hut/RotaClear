@@ -12,14 +12,15 @@ export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChang
   }
 
   const tabs = [
-    { id: 'leave', label: 'Leave' },
+    { id: 'leave', label: 'Annual Leave' },
     { id: 'swaps', label: 'Swaps' },
     { id: 'rules', label: 'Rota Rules' },
   ]
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Disclaimer */}
+      {/* Sticky header: disclaimer + tab bar */}
+      <div className="sticky top-0 z-10 bg-white">
       <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2 text-sm text-yellow-800 text-center">
         Please double-check everything with your rota coordinator and the actual spreadsheet as this website can make mistakes.
       </div>
@@ -48,12 +49,21 @@ export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChang
           Remove Rota
         </button>
       </div>
+      </div>{/* end sticky header */}
 
       {/* Active tab content */}
       <div className="flex-1 px-6 py-6">
-        {activeTab === 'leave' && <LeaveTab selectedDoctor={selectedDoctor} rotaData={rotaData} onGoToRules={() => onTabChange('rules')} />}
-        {activeTab === 'swaps' && <SwapsTab selectedDoctor={selectedDoctor} rotaData={rotaData} />}
-        {activeTab === 'rules' && <RotaRulesTab />}
+        <div className="max-w-4xl mx-auto">
+          <div className={activeTab === 'leave' ? '' : 'hidden'}>
+            <LeaveTab selectedDoctor={selectedDoctor} rotaData={rotaData} isActive={activeTab === 'leave'} onGoToRules={() => onTabChange('rules')} />
+          </div>
+          <div className={activeTab === 'swaps' ? '' : 'hidden'}>
+            <SwapsTab selectedDoctor={selectedDoctor} rotaData={rotaData} isActive={activeTab === 'swaps'} />
+          </div>
+          <div className={activeTab === 'rules' ? '' : 'hidden'}>
+            <RotaRulesTab />
+          </div>
+        </div>
       </div>
 
       {/* Remove Rota confirmation modal */}

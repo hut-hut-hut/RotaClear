@@ -1,8 +1,8 @@
 export default function RotaRulesTab() {
   return (
-    <div className="max-w-xl">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Leave Rules</h2>
-      <ul className="list-disc list-inside text-gray-700 text-sm space-y-3 mb-10">
+    <div className="max-w-xl mx-auto">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Annual Leave Rules</h2>
+      <ul className="list-disc list-outside pl-5 text-gray-700 text-sm space-y-3 mb-10">
         <li>All leave must be requested at least 6 weeks in advance</li>
         <li>No leave will be granted (study or annual) on nights or weekends</li>
         <li>
@@ -14,7 +14,7 @@ export default function RotaRulesTab() {
       </ul>
 
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Swap Rules</h2>
-      <ul className="list-disc list-inside text-gray-700 text-sm space-y-3">
+      <ul className="list-disc list-outside pl-5 text-gray-700 text-sm space-y-3">
         <li>
           You are allowed to swap any shifts you like as long as you both agree and the swap
           does not create unsafe fatigue

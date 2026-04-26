@@ -53,6 +53,7 @@ export default function UploadScreen({ onRotaLoaded }) {
               onChange={handleChange}
               className="hidden"
             />
+            <p className="mt-3 text-gray-400 text-sm">You can only upload .xls and .xlsx files only</p>
             {status === 'error' && (
               <p className="mt-4 text-red-500 text-sm">{errorMessage}</p>
             )}
