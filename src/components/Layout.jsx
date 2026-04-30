@@ -5,6 +5,7 @@ import RotaRulesTab from './RotaRulesTab.jsx'
 
 export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChange, onChangeUser, onRemoveRota }) {
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
 
   function handleConfirmRemove() {
     setShowConfirm(false)
@@ -43,7 +44,13 @@ export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChang
           ))}
         </div>
         <h1 className="text-center text-base font-semibold text-gray-900">RotaClear</h1>
-        <div className="flex justify-end">
+        <div className="flex justify-end items-center gap-4">
+          <button
+            onClick={() => setShowPrivacy(true)}
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Privacy Notice
+          </button>
           <button
             onClick={() => setShowConfirm(true)}
             className="text-sm text-gray-400 hover:text-red-500 transition-colors"
@@ -76,6 +83,34 @@ export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChang
           </div>
         </div>
       </div>
+
+      {/* Privacy Notice modal */}
+      {showPrivacy && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setShowPrivacy(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 max-w-md mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-800">Privacy Notice</h2>
+              <button
+                onClick={() => setShowPrivacy(false)}
+                className="text-gray-300 hover:text-gray-500 text-2xl leading-none ml-4 -mt-1"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-sm text-gray-600 leading-relaxed">
+              <p>
+                This website processes names and shift times from the rota you upload. All data is processed locally in your browser and is deleted when you close the tab. No data is transmitted, stored on servers, or shared with third parties. No cookies, analytics, or tracking technologies are used.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Remove Rota confirmation modal */}
       {showConfirm && (
