@@ -101,7 +101,7 @@ export default function SetupScreen({ rotaData, onSetup }) {
                     : 'border-gray-300 text-gray-700 hover:border-pink-300'
                 }`}
               >
-                Annual Leave
+                See when you can take annual leave
               </button>
               <button
                 onClick={() => setMode('swaps')}
@@ -111,7 +111,7 @@ export default function SetupScreen({ rotaData, onSetup }) {
                     : 'border-gray-300 text-gray-700 hover:border-pink-300'
                 }`}
               >
-                Swap
+                Swap a shift
               </button>
             </div>
 

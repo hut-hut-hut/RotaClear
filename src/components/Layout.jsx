@@ -3,7 +3,7 @@ import LeaveTab from './LeaveTab.jsx'
 import SwapsTab from './SwapsTab.jsx'
 import RotaRulesTab from './RotaRulesTab.jsx'
 
-export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChange, onRemoveRota }) {
+export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChange, onChangeUser, onRemoveRota }) {
   const [showConfirm, setShowConfirm] = useState(false)
 
   function handleConfirmRemove() {
@@ -22,11 +22,11 @@ export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChang
       {/* Sticky header: disclaimer + tab bar */}
       <div className="sticky top-0 z-10 bg-white">
       <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2 text-sm text-yellow-800 text-center">
-        Please double-check everything with your rota coordinator and the actual spreadsheet as this website can make mistakes.
+        Request all annual leave and swaps through the rota coordinator, who will confirm approval. Always verify details against the official spreadsheet, as this website may contain errors.
       </div>
 
-      {/* Tab bar + Remove Rota */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-6">
+      {/* Tab bar + Title + Remove Rota */}
+      <div className="grid grid-cols-3 items-center border-b border-gray-200 px-6">
         <div className="flex">
           {tabs.map(tab => (
             <button
@@ -42,11 +42,22 @@ export default function Layout({ rotaData, selectedDoctor, activeTab, onTabChang
             </button>
           ))}
         </div>
+        <h1 className="text-center text-base font-semibold text-gray-900">RotaClear</h1>
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="text-sm text-gray-400 hover:text-red-500 transition-colors"
+          >
+            Remove Rota
+          </button>
+        </div>
+      </div>
+      <div className="px-6 py-2 border-b border-white">
         <button
-          onClick={() => setShowConfirm(true)}
-          className="text-sm text-gray-400 hover:text-red-500 transition-colors"
+          onClick={onChangeUser}
+          className="flex items-center gap-1 text-sm text-gray-500 hover:text-pink-500 transition-colors"
         >
-          Remove Rota
+          ← Click here to select a different person in the rota
         </button>
       </div>
       </div>{/* end sticky header */}

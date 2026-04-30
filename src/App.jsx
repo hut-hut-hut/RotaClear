@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Retune } from 'retune'
 import UploadScreen from './components/UploadScreen.jsx'
 import SetupScreen from './components/SetupScreen.jsx'
 import Layout from './components/Layout.jsx'
@@ -55,6 +56,10 @@ function App() {
     })
   }
 
+  function handleChangeUser() {
+    setScreen('setup')
+  }
+
   function handleRemoveRota() {
     sessionStorage.removeItem(SESSION_KEY)
     setRotaData(null)
@@ -81,13 +86,17 @@ function App() {
   }
 
   return (
-    <Layout
-      rotaData={rotaData}
-      selectedDoctor={selectedDoctor}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      onRemoveRota={handleRemoveRota}
-    />
+    <>
+      <Retune />
+      <Layout
+        rotaData={rotaData}
+        selectedDoctor={selectedDoctor}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onChangeUser={handleChangeUser}
+        onRemoveRota={handleRemoveRota}
+      />
+    </>
   )
 }
 

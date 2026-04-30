@@ -7,11 +7,11 @@ function formatDateLong(isoDate) {
   })
 }
 
-export default function EmailModal({ swap, selectedDoctor, onClose }) {
+export default function LeaveEmailModal({ day, selectedDoctor, onClose }) {
   const [copied, setCopied] = useState(false)
 
   const toAddress = 'imperial.smhed-shorota@nhs.net'
-  const emailBody = `Dear Rota Coordinator,\n\nI would like to arrange a shift swap with ${swap.partnerName}.\n\nMy shift: ${formatDateLong(swap.myDate)} (${swap.myShift})\n${swap.partnerName}'s shift: ${formatDateLong(swap.partnerDate)} (${swap.partnerShift})\n\nPlease could you arrange this swap? Let me know if you have any questions.\n\n${selectedDoctor}`
+  const emailBody = `Dear Rota Coordinator,\n\nI would like to request annual leave on ${formatDateLong(day.date)} (${day.shiftTime}).\n\nI understand this is within the 6-week window. Please could you let me know if this would be possible to arrange?\n\nMany thanks,\n${selectedDoctor}`
   const fullText = `To: ${toAddress}\n\n${emailBody}`
 
   function handleCopy() {
@@ -31,7 +31,7 @@ export default function EmailModal({ swap, selectedDoctor, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-base font-semibold text-gray-800">Email Draft</h2>
+          <h2 className="text-base font-semibold text-gray-800">Leave Request Email Draft</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-xl leading-none"
@@ -60,7 +60,7 @@ export default function EmailModal({ swap, selectedDoctor, onClose }) {
           </button>
           <button
             onClick={handleCopy}
-            className="px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-xl transition-colors"
+            className="px-4 py-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl transition-colors"
           >
             {copied ? 'Copied!' : 'Copy to clipboard'}
           </button>

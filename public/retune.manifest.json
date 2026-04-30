@@ -1,0 +1,260 @@
+{
+  "version": 2,
+  "responsive": {
+    "strategy": "tailwind",
+    "direction": "mobile-first",
+    "breakpoints": {
+      "sm": "640px",
+      "md": "768px",
+      "lg": "1024px",
+      "xl": "1280px",
+      "2xl": "1536px"
+    }
+  },
+  "components": {
+    "UploadScreen": {
+      "state": {
+        "status": {
+          "type": "enum",
+          "values": ["idle", "analyzing", "error"],
+          "default": "idle",
+          "description": "Controls which UI is shown: upload button, spinner, or error message"
+        }
+      }
+    },
+    "SetupScreen": {
+      "state": {
+        "dropdownOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the doctor name dropdown is visible"
+        },
+        "mode": {
+          "type": "enum",
+          "values": ["leave", "swaps"],
+          "default": null,
+          "description": "Which mode button is highlighted and enables the Go button"
+        }
+      }
+    },
+    "Layout": {
+      "props": {
+        "activeTab": {
+          "type": "enum",
+          "values": ["leave", "swaps", "rules"],
+          "default": "leave",
+          "description": "Which tab is active and underlined in the tab bar"
+        }
+      },
+      "state": {
+        "showConfirm": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the Remove Rota confirmation modal is visible"
+        }
+      }
+    },
+    "DayPopup": {
+      "state": {
+        "showEmail": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, shows LeaveEmailModal instead of the day detail view"
+        }
+      }
+    },
+    "EmailModal": {
+      "state": {
+        "copied": {
+          "type": "boolean",
+          "default": false,
+          "description": "Switches the copy button label from 'Copy to clipboard' to 'Copied!'"
+        }
+      }
+    },
+    "LeaveEmailModal": {
+      "state": {
+        "copied": {
+          "type": "boolean",
+          "default": false,
+          "description": "Switches the copy button label from 'Copy to clipboard' to 'Copied!'"
+        }
+      }
+    },
+    "SwapsTab": {
+      "state": {
+        "selectedDate": {
+          "type": "enum",
+          "values": [null, "date-string"],
+          "default": null,
+          "description": "null shows the shift calendar; a date string switches to the swap partners list view"
+        },
+        "showFatiguePopup": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the fatigue rules explanation popup is visible"
+        }
+      }
+    }
+  },
+  "tokens": {
+    "colors": {
+      "pink": {
+        "pink-50":  { "value": "#fdf2f8", "variable": "--color-pink-50",  "class": "bg-pink-50"  },
+        "pink-100": { "value": "#fce7f3", "variable": "--color-pink-100", "class": "bg-pink-100" },
+        "pink-200": { "value": "#fbcfe8", "variable": "--color-pink-200", "class": "bg-pink-200" },
+        "pink-300": { "value": "#f9a8d4", "variable": "--color-pink-300", "class": "bg-pink-300" },
+        "pink-400": { "value": "#f472b6", "variable": "--color-pink-400", "class": "bg-pink-400" },
+        "pink-500": { "value": "#ec4899", "variable": "--color-pink-500", "class": "bg-pink-500" },
+        "pink-600": { "value": "#db2777", "variable": "--color-pink-600", "class": "bg-pink-600" },
+        "pink-700": { "value": "#be185d", "variable": "--color-pink-700", "class": "bg-pink-700" },
+        "pink-800": { "value": "#9d174d", "variable": "--color-pink-800", "class": "bg-pink-800" },
+        "pink-900": { "value": "#831843", "variable": "--color-pink-900", "class": "bg-pink-900" },
+        "pink-950": { "value": "#500724", "variable": "--color-pink-950", "class": "bg-pink-950" }
+      },
+      "gray": {
+        "gray-50":  { "value": "#f9fafb", "variable": "--color-gray-50",  "class": "bg-gray-50"  },
+        "gray-100": { "value": "#f3f4f6", "variable": "--color-gray-100", "class": "bg-gray-100" },
+        "gray-200": { "value": "#e5e7eb", "variable": "--color-gray-200", "class": "bg-gray-200" },
+        "gray-300": { "value": "#d1d5db", "variable": "--color-gray-300", "class": "bg-gray-300" },
+        "gray-400": { "value": "#9ca3af", "variable": "--color-gray-400", "class": "bg-gray-400" },
+        "gray-500": { "value": "#6b7280", "variable": "--color-gray-500", "class": "bg-gray-500" },
+        "gray-600": { "value": "#4b5563", "variable": "--color-gray-600", "class": "bg-gray-600" },
+        "gray-700": { "value": "#374151", "variable": "--color-gray-700", "class": "bg-gray-700" },
+        "gray-800": { "value": "#1f2937", "variable": "--color-gray-800", "class": "bg-gray-800" },
+        "gray-900": { "value": "#111827", "variable": "--color-gray-900", "class": "bg-gray-900" },
+        "gray-950": { "value": "#030712", "variable": "--color-gray-950", "class": "bg-gray-950" }
+      },
+      "yellow": {
+        "yellow-50":  { "value": "#fefce8", "variable": "--color-yellow-50",  "class": "bg-yellow-50"  },
+        "yellow-100": { "value": "#fef9c3", "variable": "--color-yellow-100", "class": "bg-yellow-100" },
+        "yellow-200": { "value": "#fef08a", "variable": "--color-yellow-200", "class": "bg-yellow-200" },
+        "yellow-300": { "value": "#fde047", "variable": "--color-yellow-300", "class": "bg-yellow-300" },
+        "yellow-400": { "value": "#facc15", "variable": "--color-yellow-400", "class": "bg-yellow-400" },
+        "yellow-500": { "value": "#eab308", "variable": "--color-yellow-500", "class": "bg-yellow-500" },
+        "yellow-600": { "value": "#ca8a04", "variable": "--color-yellow-600", "class": "bg-yellow-600" },
+        "yellow-700": { "value": "#a16207", "variable": "--color-yellow-700", "class": "bg-yellow-700" },
+        "yellow-800": { "value": "#854d0e", "variable": "--color-yellow-800", "class": "bg-yellow-800" },
+        "yellow-900": { "value": "#713f12", "variable": "--color-yellow-900", "class": "bg-yellow-900" },
+        "yellow-950": { "value": "#422006", "variable": "--color-yellow-950", "class": "bg-yellow-950" }
+      },
+      "green": {
+        "green-50":  { "value": "#f0fdf4", "variable": "--color-green-50",  "class": "bg-green-50"  },
+        "green-100": { "value": "#dcfce7", "variable": "--color-green-100", "class": "bg-green-100" },
+        "green-200": { "value": "#bbf7d0", "variable": "--color-green-200", "class": "bg-green-200" },
+        "green-300": { "value": "#86efac", "variable": "--color-green-300", "class": "bg-green-300" },
+        "green-400": { "value": "#4ade80", "variable": "--color-green-400", "class": "bg-green-400" },
+        "green-500": { "value": "#22c55e", "variable": "--color-green-500", "class": "bg-green-500" },
+        "green-600": { "value": "#16a34a", "variable": "--color-green-600", "class": "bg-green-600" },
+        "green-700": { "value": "#15803d", "variable": "--color-green-700", "class": "bg-green-700" },
+        "green-800": { "value": "#166534", "variable": "--color-green-800", "class": "bg-green-800" },
+        "green-900": { "value": "#14532d", "variable": "--color-green-900", "class": "bg-green-900" },
+        "green-950": { "value": "#052e16", "variable": "--color-green-950", "class": "bg-green-950" }
+      },
+      "blue": {
+        "blue-50":  { "value": "#eff6ff", "variable": "--color-blue-50",  "class": "bg-blue-50"  },
+        "blue-100": { "value": "#dbeafe", "variable": "--color-blue-100", "class": "bg-blue-100" },
+        "blue-200": { "value": "#bfdbfe", "variable": "--color-blue-200", "class": "bg-blue-200" },
+        "blue-300": { "value": "#93c5fd", "variable": "--color-blue-300", "class": "bg-blue-300" },
+        "blue-400": { "value": "#60a5fa", "variable": "--color-blue-400", "class": "bg-blue-400" },
+        "blue-500": { "value": "#3b82f6", "variable": "--color-blue-500", "class": "bg-blue-500" },
+        "blue-600": { "value": "#2563eb", "variable": "--color-blue-600", "class": "bg-blue-600" },
+        "blue-700": { "value": "#1d4ed8", "variable": "--color-blue-700", "class": "bg-blue-700" },
+        "blue-800": { "value": "#1e40af", "variable": "--color-blue-800", "class": "bg-blue-800" },
+        "blue-900": { "value": "#1e3a8a", "variable": "--color-blue-900", "class": "bg-blue-900" },
+        "blue-950": { "value": "#172554", "variable": "--color-blue-950", "class": "bg-blue-950" }
+      },
+      "red": {
+        "red-50":  { "value": "#fef2f2", "variable": "--color-red-50",  "class": "bg-red-50"  },
+        "red-100": { "value": "#fee2e2", "variable": "--color-red-100", "class": "bg-red-100" },
+        "red-200": { "value": "#fecaca", "variable": "--color-red-200", "class": "bg-red-200" },
+        "red-300": { "value": "#fca5a5", "variable": "--color-red-300", "class": "bg-red-300" },
+        "red-400": { "value": "#f87171", "variable": "--color-red-400", "class": "bg-red-400" },
+        "red-500": { "value": "#ef4444", "variable": "--color-red-500", "class": "bg-red-500" },
+        "red-600": { "value": "#dc2626", "variable": "--color-red-600", "class": "bg-red-600" },
+        "red-700": { "value": "#b91c1c", "variable": "--color-red-700", "class": "bg-red-700" },
+        "red-800": { "value": "#991b1b", "variable": "--color-red-800", "class": "bg-red-800" },
+        "red-900": { "value": "#7f1d1d", "variable": "--color-red-900", "class": "bg-red-900" },
+        "red-950": { "value": "#450a0a", "variable": "--color-red-950", "class": "bg-red-950" }
+      },
+      "neutral": {
+        "white": { "value": "#ffffff", "variable": "--color-white", "class": "bg-white" },
+        "black": { "value": "#000000", "variable": "--color-black", "class": "bg-black" }
+      }
+    },
+    "spacing": {
+      "0":    { "value": "0px",     "class": "p-0"  },
+      "0.5":  { "value": "0.125rem","class": "p-0.5"},
+      "1":    { "value": "0.25rem", "class": "p-1"  },
+      "1.5":  { "value": "0.375rem","class": "p-1.5"},
+      "2":    { "value": "0.5rem",  "class": "p-2"  },
+      "2.5":  { "value": "0.625rem","class": "p-2.5"},
+      "3":    { "value": "0.75rem", "class": "p-3"  },
+      "3.5":  { "value": "0.875rem","class": "p-3.5"},
+      "4":    { "value": "1rem",    "class": "p-4"  },
+      "5":    { "value": "1.25rem", "class": "p-5"  },
+      "6":    { "value": "1.5rem",  "class": "p-6"  },
+      "7":    { "value": "1.75rem", "class": "p-7"  },
+      "8":    { "value": "2rem",    "class": "p-8"  },
+      "9":    { "value": "2.25rem", "class": "p-9"  },
+      "10":   { "value": "2.5rem",  "class": "p-10" },
+      "11":   { "value": "2.75rem", "class": "p-11" },
+      "12":   { "value": "3rem",    "class": "p-12" },
+      "14":   { "value": "3.5rem",  "class": "p-14" },
+      "16":   { "value": "4rem",    "class": "p-16" },
+      "20":   { "value": "5rem",    "class": "p-20" },
+      "24":   { "value": "6rem",    "class": "p-24" },
+      "28":   { "value": "7rem",    "class": "p-28" },
+      "32":   { "value": "8rem",    "class": "p-32" },
+      "36":   { "value": "9rem",    "class": "p-36" },
+      "40":   { "value": "10rem",   "class": "p-40" },
+      "44":   { "value": "11rem",   "class": "p-44" },
+      "48":   { "value": "12rem",   "class": "p-48" },
+      "52":   { "value": "13rem",   "class": "p-52" },
+      "56":   { "value": "14rem",   "class": "p-56" },
+      "60":   { "value": "15rem",   "class": "p-60" },
+      "64":   { "value": "16rem",   "class": "p-64" },
+      "72":   { "value": "18rem",   "class": "p-72" },
+      "80":   { "value": "20rem",   "class": "p-80" },
+      "96":   { "value": "24rem",   "class": "p-96" }
+    },
+    "sizing": {
+      "sm":   { "value": "24rem",  "class": "max-w-sm"  },
+      "md":   { "value": "28rem",  "class": "max-w-md"  },
+      "2xl":  { "value": "42rem",  "class": "max-w-2xl" },
+      "3xl":  { "value": "48rem",  "class": "max-w-3xl" },
+      "4xl":  { "value": "56rem",  "class": "max-w-4xl" },
+      "xl":   { "value": "36rem",  "class": "max-w-xl"  }
+    },
+    "radii": {
+      "rounded-lg":   { "value": "0.5rem",   "class": "rounded-lg"   },
+      "rounded-xl":   { "value": "0.75rem",  "class": "rounded-xl"   },
+      "rounded-2xl":  { "value": "1rem",     "class": "rounded-2xl"  },
+      "rounded-full": { "value": "9999px",   "class": "rounded-full" }
+    },
+    "borderWidths": {
+      "border":   { "value": "1px", "class": "border"   },
+      "border-2": { "value": "2px", "class": "border-2" },
+      "border-4": { "value": "4px", "class": "border-4" }
+    },
+    "shadows": {
+      "shadow-sm": { "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "class": "shadow-sm" },
+      "shadow-md": { "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", "class": "shadow-md" },
+      "shadow-xl": { "value": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)", "class": "shadow-xl" }
+    },
+    "typography": {
+      "text-xs":    { "value": "0.75rem",  "class": "text-xs"    },
+      "text-sm":    { "value": "0.875rem", "class": "text-sm"    },
+      "text-base":  { "value": "1rem",     "class": "text-base"  },
+      "text-xl":    { "value": "1.25rem",  "class": "text-xl"    },
+      "text-2xl":   { "value": "1.5rem",   "class": "text-2xl"   },
+      "text-3xl":   { "value": "1.875rem", "class": "text-3xl"   },
+      "font-medium":   { "value": "500", "class": "font-medium"   },
+      "font-semibold": { "value": "600", "class": "font-semibold" },
+      "font-bold":     { "value": "700", "class": "font-bold"     },
+      "leading-none":    { "value": "1",     "class": "leading-none"    },
+      "leading-tight":   { "value": "1.25",  "class": "leading-tight"   },
+      "leading-relaxed": { "value": "1.625", "class": "leading-relaxed" }
+    }
+  }
+}

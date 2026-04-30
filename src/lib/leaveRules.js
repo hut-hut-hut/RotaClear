@@ -1,4 +1,5 @@
-const LEAVE_CODES = new Set(['AL', 'SL', 'EDT', 'STT'])
+const LEAVE_CODES = new Set(['AL', 'SL', 'EDT', 'STT', 'SDT', 'LTFT'])
+const OFF_WORD = /\boff\b/i
 
 function isWeekend(isoDate) {
   const [y, m, d] = isoDate.split('-').map(Number)
@@ -7,14 +8,14 @@ function isWeekend(isoDate) {
 }
 
 function isNightShift(shiftTime) {
-  // Handles "22:00-08:30", "22:00 - 08:30", etc.
-  return shiftTime.startsWith('22:') || shiftTime.startsWith('22 ')
+  const s = shiftTime.replace(/^\*/, '').trim()
+  return s.startsWith('22:') || /^22\d/.test(s)
 }
 
 function countColleaguesOnLeave(date, schedule, excludeDoctor) {
   return Object.values(
     Object.fromEntries(Object.entries(schedule).filter(([name]) => name !== excludeDoctor))
-  ).filter(days => days[date] && LEAVE_CODES.has(days[date].shift)).length
+  ).filter(days => days[date] && LEAVE_CODES.has(String(days[date].shift).toUpperCase())).length
 }
 
 export function calculateLeaveEligibility(doctor, schedule, today) {
@@ -27,31 +28,31 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
     .map(([date, { shift }]) => {
       const shiftTime = shift || ''
 
-      // Empty cell (day off) or existing leave code — not a requestable shift
-      if (shiftTime === '' || LEAVE_CODES.has(shiftTime)) {
-        return { date, shiftTime, eligible: false, reason: null, isDayOff: true }
+      // Empty cell, leave code, or any cell containing the word "off" — treated as a day off
+      if (shiftTime === '' || LEAVE_CODES.has(shiftTime.toUpperCase()) || OFF_WORD.test(shiftTime)) {
+        return { date, shiftTime, eligible: false, reason: null, isDayOff: true, isWithin6Weeks: false }
       }
 
       const dateMs = new Date(date + 'T00:00:00').getTime()
 
       // Past date
       if (dateMs < todayMs) {
-        return { date, shiftTime, eligible: false, reason: 'This date has already passed. Therefore annual leave cannot be booked.', isDayOff: false }
+        return { date, shiftTime, eligible: false, reason: 'This date has already passed. Therefore annual leave cannot be booked.', isDayOff: false, isWithin6Weeks: false }
       }
 
       // Condition 1: at least 42 days from today
       if (dateMs < cutoffMs) {
-        return { date, shiftTime, eligible: false, reason: 'This date is fewer than 6 weeks away.', isDayOff: false }
+        return { date, shiftTime, eligible: false, reason: 'This date is fewer than 6 weeks away.', isDayOff: false, isWithin6Weeks: true }
       }
 
       // Condition 2: not a night shift
       if (isNightShift(shiftTime)) {
-        return { date, shiftTime, eligible: false, reason: 'No leave can be requested on night shifts.', isDayOff: false }
+        return { date, shiftTime, eligible: false, reason: 'No leave can be requested on night shifts.', isDayOff: false, isWithin6Weeks: false }
       }
 
       // Condition 3: not a weekend (computed from date, not spreadsheet column)
       if (isWeekend(date)) {
-        return { date, shiftTime, eligible: false, reason: 'No leave can be requested on weekends.', isDayOff: false }
+        return { date, shiftTime, eligible: false, reason: 'No leave can be requested on weekends.', isDayOff: false, isWithin6Weeks: false }
       }
 
       // Condition 4: fewer than 6 colleagues on leave on this date
@@ -60,10 +61,10 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
         return {
           date, shiftTime, eligible: false,
           reason: `${colleaguesOnLeave} of your colleagues are already on leave on this date.`,
-          isDayOff: false,
+          isDayOff: false, isWithin6Weeks: false,
         }
       }
 
-      return { date, shiftTime, eligible: true, reason: null, isDayOff: false }
+      return { date, shiftTime, eligible: true, reason: null, isDayOff: false, isWithin6Weeks: false }
     })
 }
