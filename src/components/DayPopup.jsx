@@ -62,7 +62,7 @@ export default function DayPopup({ day, selectedDoctor, isWaterCoordinator, onCl
         {eligible && (
           <div>
             <p className="text-sm text-gray-700 leading-relaxed">
-              This is a day you can request annual leave.
+              This is a day you can request annual leave. Please contact the rota coordinator who will confirm approval.
             </p>
           </div>
         )}
