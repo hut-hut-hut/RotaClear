@@ -4,6 +4,7 @@ import { parseRota } from '../lib/parseRota.js'
 export default function UploadScreen({ onRotaLoaded }) {
   const [status, setStatus] = useState('idle') // 'idle' | 'analyzing' | 'error'
   const [errorMessage, setErrorMessage] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef(null)
 
   async function handleFile(file) {
@@ -24,6 +25,24 @@ export default function UploadScreen({ onRotaLoaded }) {
     e.target.value = ''
   }
 
+  function handleDragOver(e) {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  function handleDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false)
+    }
+  }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFile(file)
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
@@ -39,7 +58,19 @@ export default function UploadScreen({ onRotaLoaded }) {
             <p className="text-gray-600">Thanks for the file. Analyzing…</p>
           </div>
         ) : (
-          <>
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-xl p-10 transition-colors ${
+              isDragging
+                ? 'border-pink-400 bg-pink-50'
+                : 'border-gray-200 bg-gray-50'
+            }`}
+          >
+            <p className="text-gray-400 text-sm mb-5">
+              {isDragging ? 'Drop your file here' : 'Drag & drop your rota here, or'}
+            </p>
             <button
               onClick={() => inputRef.current.click()}
               className="bg-pink-500 hover:bg-pink-600 text-white font-medium px-8 py-3 rounded-lg transition-colors cursor-pointer"
@@ -53,11 +84,11 @@ export default function UploadScreen({ onRotaLoaded }) {
               onChange={handleChange}
               className="hidden"
             />
-            <p className="mt-3 text-gray-400 text-sm">You can only upload .xls and .xlsx files only</p>
+            <p className="mt-4 text-gray-400 text-sm">Accepts .xls and .xlsx files only</p>
             {status === 'error' && (
               <p className="mt-4 text-red-500 text-sm">{errorMessage}</p>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
