@@ -40,19 +40,19 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
         return { date, shiftTime, eligible: false, reason: 'This date has already passed. Therefore annual leave cannot be booked.', isDayOff: false, isWithin6Weeks: false }
       }
 
-      // Condition 1: at least 42 days from today
-      if (dateMs < cutoffMs) {
-        return { date, shiftTime, eligible: false, reason: 'This date is fewer than 6 weeks away.', isDayOff: false, isWithin6Weeks: true }
-      }
-
-      // Condition 2: not a night shift
+      // Condition 1: not a night shift (always ineligible, regardless of timing)
       if (isNightShift(shiftTime)) {
         return { date, shiftTime, eligible: false, reason: 'No leave can be requested on night shifts.', isDayOff: false, isWithin6Weeks: false }
       }
 
-      // Condition 3: not a weekend (computed from date, not spreadsheet column)
+      // Condition 2: not a weekend (always ineligible, regardless of timing)
       if (isWeekend(date)) {
         return { date, shiftTime, eligible: false, reason: 'No leave can be requested on weekends.', isDayOff: false, isWithin6Weeks: false }
+      }
+
+      // Condition 3: at least 42 days from today
+      if (dateMs < cutoffMs) {
+        return { date, shiftTime, eligible: false, reason: 'This date is fewer than 6 weeks away.', isDayOff: false, isWithin6Weeks: true }
       }
 
       // Condition 4: fewer than 6 colleagues on leave on this date

@@ -205,6 +205,9 @@ export function calculateValidSwapsForDate(doctor, schedule, targetDate, precomp
       // Partner can't take the doctor's shift on a day they're already working
       if (partnerOccupiedDates.has(targetDate)) continue
 
+      // Night shifts can only be swapped with other night shifts
+      if (isNightShift(myShift) !== isNightShift(partnerShift)) continue
+
       if (
         validateFatigueWithSwap(myShifts, myEntries, targetDate, partnerDate, partnerShift, partnerTiming) &&
         validateFatigueWithSwap(partnerShifts, partnerEntries, partnerDate, targetDate, myShift, myTiming)
@@ -341,6 +344,11 @@ export function getDiagnostics(doctor, schedule, targetDate, precomputed) {
       }
       if (partnerOccupiedDates.has(targetDate)) {
         diagnostics.push({ partnerName, partnerDate, partnerShift, myReason: null, partnerReason: 'they already have a shift on your date' })
+        continue
+      }
+
+      if (isNightShift(myShift) !== isNightShift(partnerShift)) {
+        diagnostics.push({ partnerName, partnerDate, partnerShift, myReason: 'night shifts can only be swapped with other night shifts', partnerReason: null })
         continue
       }
 
