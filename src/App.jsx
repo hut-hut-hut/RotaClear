@@ -68,34 +68,27 @@ function App() {
     setScreen('upload')
   }
 
-  if (screen === 'upload') {
-    return <UploadScreen onRotaLoaded={handleRotaLoaded} />
-  }
-
-  if (screen === 'setup') {
-    return <SetupScreen rotaData={rotaData} onSetup={handleSetup} />
-  }
-
-  if (screen === 'loading') {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
-        <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-500 text-sm">Loading your rota…</p>
-      </div>
-    )
-  }
-
   return (
     <>
       <Retune />
-      <Layout
-        rotaData={rotaData}
-        selectedDoctor={selectedDoctor}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onChangeUser={handleChangeUser}
-        onRemoveRota={handleRemoveRota}
-      />
+      {screen === 'upload' && <UploadScreen onRotaLoaded={handleRotaLoaded} />}
+      {screen === 'setup' && <SetupScreen rotaData={rotaData} onSetup={handleSetup} />}
+      {screen === 'loading' && (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+          <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-500 text-sm">Loading your rota…</p>
+        </div>
+      )}
+      {screen === 'main' && (
+        <Layout
+          rotaData={rotaData}
+          selectedDoctor={selectedDoctor}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onChangeUser={handleChangeUser}
+          onRemoveRota={handleRemoveRota}
+        />
+      )}
     </>
   )
 }

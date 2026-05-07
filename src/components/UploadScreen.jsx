@@ -5,6 +5,7 @@ export default function UploadScreen({ onRotaLoaded }) {
   const [status, setStatus] = useState('idle') // 'idle' | 'analyzing' | 'error'
   const [errorMessage, setErrorMessage] = useState('')
   const [isDragging, setIsDragging] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
   const inputRef = useRef(null)
 
   async function handleFile(file) {
@@ -44,7 +45,7 @@ export default function UploadScreen({ onRotaLoaded }) {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 relative">
       <div className="w-full max-w-md text-center">
         <h1 className="text-3xl font-semibold text-gray-900 mb-2">RotaClear</h1>
         <p className="text-gray-500 mb-10">
@@ -91,6 +92,41 @@ export default function UploadScreen({ onRotaLoaded }) {
           </div>
         )}
       </div>
+
+      {/* Privacy notice link pinned to bottom of landing page */}
+      <button
+        onClick={() => setShowPrivacy(true)}
+        className="absolute bottom-6 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        Privacy Notice
+      </button>
+
+      {showPrivacy && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setShowPrivacy(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 max-w-md mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-800">Privacy Notice</h2>
+              <button
+                onClick={() => setShowPrivacy(false)}
+                className="text-gray-300 hover:text-gray-500 text-2xl leading-none ml-4 -mt-1"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-sm text-gray-600 leading-relaxed">
+              <p>
+                This website processes names and shift times from the rota you upload. All data is processed locally in your browser and is deleted when you close the tab. No data is transmitted, stored on servers, or shared with third parties. No cookies, analytics, or tracking technologies are used.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
