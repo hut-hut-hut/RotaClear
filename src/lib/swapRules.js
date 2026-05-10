@@ -2,6 +2,32 @@ const LEAVE_CODES = new Set(['AL', 'SL', 'EDT', 'STT', 'SDT', 'LTFT'])
 const OFF_CODES = new Set(['do', 'bh', 'zero'])
 const OFF_WORD = /\boff\b/i
 
+// Gen Med SHO swap groups — shifts can only be swapped within the same group.
+// null = not swappable at all (ward specialty).
+const GEN_MED_SHO_SWAP_GROUPS = {
+  'take':         'take',
+  'pt':           'pt',
+  'take late 1':  'take_late',
+  'take late 2':  'take_late',
+  'amu long 1':   'amu_long',
+  'amu long 2':   'amu_long',
+  'ward late':    null,
+  'ward weekend': null,
+  'sdec':         'sdec',
+  'night 1':      'night',
+  'night 2':      'night',
+  'ward':         null,
+}
+
+// Returns the swap group for a named Gen Med SHO shift, null if unswappable, undefined if not a named shift.
+function getSwapGroup(shift) {
+  const lower = String(shift).trim().toLowerCase()
+  if (Object.prototype.hasOwnProperty.call(GEN_MED_SHO_SWAP_GROUPS, lower)) {
+    return GEN_MED_SHO_SWAP_GROUPS[lower]
+  }
+  return undefined
+}
+
 // Gen Med SHO named shift codes → start/end times
 const NAMED_SHIFT_TIMES = {
   'take':         { startH: 8,  startM: 30, endH: 21, endM: 0,  nextDay: false },
@@ -232,8 +258,16 @@ export function calculateValidSwapsForDate(doctor, schedule, targetDate, precomp
       // Partner can't take the doctor's shift on a day they're already working
       if (partnerOccupiedDates.has(targetDate)) continue
 
-      // Night shifts can only be swapped with other night shifts
-      if (isNightShift(myShift) !== isNightShift(partnerShift)) continue
+      // Enforce shift-type compatibility
+      const myGroup = getSwapGroup(myShift)
+      const partnerGroup = getSwapGroup(partnerShift)
+      if (myGroup === null) return []          // myShift is a ward/unswappable shift
+      if (partnerGroup === null) continue      // partner's shift is unswappable
+      if (myGroup !== undefined && partnerGroup !== undefined) {
+        if (myGroup !== partnerGroup) continue // named shifts must be the same type
+      } else {
+        if (isNightShift(myShift) !== isNightShift(partnerShift)) continue
+      }
 
       if (
         validateFatigueWithSwap(myShifts, myEntries, targetDate, partnerDate, partnerShift, partnerTiming) &&
@@ -374,7 +408,19 @@ export function getDiagnostics(doctor, schedule, targetDate, precomputed) {
         continue
       }
 
-      if (isNightShift(myShift) !== isNightShift(partnerShift)) {
+      const myGroup = getSwapGroup(myShift)
+      const partnerGroup = getSwapGroup(partnerShift)
+      if (myGroup === null) return []
+      if (partnerGroup === null) {
+        diagnostics.push({ partnerName, partnerDate, partnerShift, myReason: 'ward shifts cannot be swapped', partnerReason: null })
+        continue
+      }
+      if (myGroup !== undefined && partnerGroup !== undefined) {
+        if (myGroup !== partnerGroup) {
+          diagnostics.push({ partnerName, partnerDate, partnerShift, myReason: 'shifts can only be swapped with the same shift type', partnerReason: null })
+          continue
+        }
+      } else if (isNightShift(myShift) !== isNightShift(partnerShift)) {
         diagnostics.push({ partnerName, partnerDate, partnerShift, myReason: 'night shifts can only be swapped with other night shifts', partnerReason: null })
         continue
       }
