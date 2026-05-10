@@ -1,10 +1,30 @@
 const LEAVE_CODES = new Set(['AL', 'SL', 'EDT', 'STT', 'SDT', 'LTFT'])
+const OFF_CODES = new Set(['do', 'bh', 'zero'])
 const OFF_WORD = /\boff\b/i
 
-// Accepts "HH:MM-HH:MM", "HHMM-HHMM", and "HH:MM - HH:MM" (spaces around dash)
+// Gen Med SHO named shift codes → start/end times
+const NAMED_SHIFT_TIMES = {
+  'take':         { startH: 8,  startM: 30, endH: 21, endM: 0,  nextDay: false },
+  'pt':           { startH: 8,  startM: 0,  endH: 17, endM: 0,  nextDay: false },
+  'take late 1':  { startH: 8,  startM: 30, endH: 21, endM: 0,  nextDay: false },
+  'take late 2':  { startH: 8,  startM: 30, endH: 21, endM: 0,  nextDay: false },
+  'amu long 1':   { startH: 8,  startM: 30, endH: 21, endM: 0,  nextDay: false },
+  'amu long 2':   { startH: 8,  startM: 30, endH: 21, endM: 0,  nextDay: false },
+  'ward late':    { startH: 9,  startM: 0,  endH: 21, endM: 0,  nextDay: false },
+  'ward weekend': { startH: 8,  startM: 30, endH: 21, endM: 0,  nextDay: false },
+  'sdec':         { startH: 9,  startM: 0,  endH: 17, endM: 0,  nextDay: false },
+  'night 1':      { startH: 20, startM: 30, endH: 9,  endM: 30, nextDay: true  },
+  'night 2':      { startH: 20, startM: 30, endH: 9,  endM: 30, nextDay: true  },
+  'ward':         { startH: 9,  startM: 0,  endH: 17, endM: 0,  nextDay: false },
+}
+
+// Accepts "HH:MM-HH:MM", "HHMM-HHMM", "HH:MM - HH:MM", or a named shift code
 function isShift(value) {
   if (!value || LEAVE_CODES.has(String(value).toUpperCase())) return false
   if (OFF_WORD.test(String(value))) return false
+  const lower = String(value).trim().toLowerCase()
+  if (OFF_CODES.has(lower)) return false
+  if (NAMED_SHIFT_TIMES[lower]) return true
   return /^\*?\d{2,4}[:]?\d{0,2}\s*-/.test(String(value).trim())
 }
 
@@ -20,14 +40,20 @@ function parseTimePart(part) {
 
 function shiftToMinutes(dateISO, shiftRaw) {
   const [year, month, day] = dateISO.split('-').map(Number)
-  const shift = shiftRaw.replace(/^\*/, '').trim()
   const baseMins = new Date(year, month - 1, day).getTime() / 60000
+
+  const named = NAMED_SHIFT_TIMES[String(shiftRaw).trim().toLowerCase()]
+  if (named) {
+    const startMins = baseMins + named.startH * 60 + named.startM
+    const endMins = baseMins + named.endH * 60 + named.endM + (named.nextDay ? 24 * 60 : 0)
+    return { startMins, endMins }
+  }
+
+  const shift = shiftRaw.replace(/^\*/, '').trim()
   const match = shift.match(/^(\d{2,4}:?\d{0,2})\s*-\s*(\d{2,4}:?\d{0,2})/)
   if (!match) return { startMins: 0, endMins: 0 }
-  const startPart = match[1]
-  const endPart = match[2]
-  const { hour: startHour, min: startMin } = parseTimePart(startPart)
-  const { hour: endHour, min: endMin } = parseTimePart(endPart)
+  const { hour: startHour, min: startMin } = parseTimePart(match[1])
+  const { hour: endHour, min: endMin } = parseTimePart(match[2])
   const startMins = baseMins + startHour * 60 + startMin
   let endMins = baseMins + endHour * 60 + endMin
   if (endHour < startHour) endMins += 24 * 60
@@ -36,7 +62,8 @@ function shiftToMinutes(dateISO, shiftRaw) {
 
 function isNightShift(shift) {
   const s = shift.replace(/^\*/, '').trim()
-  return s.startsWith('22:') || /^22\d/.test(s)
+  if (s.startsWith('22:') || /^22\d/.test(s)) return true
+  return /^night\b/i.test(s)
 }
 
 /**

@@ -1,4 +1,5 @@
 const LEAVE_CODES = new Set(['AL', 'SL', 'EDT', 'STT', 'SDT', 'LTFT'])
+const OFF_CODES = new Set(['DO', 'BH', 'ZERO'])
 const OFF_WORD = /\boff\b/i
 
 function isWeekend(isoDate) {
@@ -9,7 +10,10 @@ function isWeekend(isoDate) {
 
 function isNightShift(shiftTime) {
   const s = shiftTime.replace(/^\*/, '').trim()
-  return s.startsWith('22:') || /^22\d/.test(s)
+  // Time-based (e.g. SMH format: "22:00-08:00")
+  if (s.startsWith('22:') || /^22\d/.test(s)) return true
+  // Code-based (e.g. Gen Med SHO format: "Night 1", "Night 2")
+  return /^night\b/i.test(s)
 }
 
 function countColleaguesOnLeave(date, schedule, excludeDoctor) {
@@ -28,8 +32,8 @@ export function calculateLeaveEligibility(doctor, schedule, today) {
     .map(([date, { shift }]) => {
       const shiftTime = shift || ''
 
-      // Empty cell, leave code, or any cell containing the word "off" — treated as a day off
-      if (shiftTime === '' || LEAVE_CODES.has(shiftTime.toUpperCase()) || OFF_WORD.test(shiftTime)) {
+      // Empty cell, leave/off code, or any cell containing the word "off" — treated as a day off
+      if (shiftTime === '' || LEAVE_CODES.has(shiftTime.toUpperCase()) || OFF_CODES.has(shiftTime.toUpperCase()) || OFF_WORD.test(shiftTime)) {
         return { date, shiftTime, eligible: false, reason: null, isDayOff: true, isWithin6Weeks: false }
       }
 
