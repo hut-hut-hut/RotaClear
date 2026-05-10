@@ -407,7 +407,7 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
               <button
                 onClick={() => setCurrentMonthIdx(i => Math.max(0, i - 1))}
                 disabled={currentMonthIdx === 0}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xl leading-none"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-3xl leading-none"
               >
                 ‹
               </button>
@@ -417,7 +417,7 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
               <button
                 onClick={() => setCurrentMonthIdx(i => Math.min(monthGroups.length - 1, i + 1))}
                 disabled={currentMonthIdx === monthGroups.length - 1}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xl leading-none"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-3xl leading-none"
               >
                 ›
               </button>
