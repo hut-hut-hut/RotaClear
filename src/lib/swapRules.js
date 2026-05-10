@@ -191,6 +191,16 @@ function validateFatigueWithSwap(baseShifts, baseEntries, removedDate, insertedD
   return true
 }
 
+// Returns a formatted time string for a shift — e.g. "Take late 2" → "0830–2100".
+// For time-string shifts the value already contains the time, so returns null.
+export function getShiftTime(shift) {
+  const named = NAMED_SHIFT_TIMES[String(shift).trim().toLowerCase()]
+  if (!named) return null
+  const start = `${String(named.startH).padStart(2, '0')}${String(named.startM).padStart(2, '0')}`
+  const end = `${String(named.endH).padStart(2, '0')}${String(named.endM).padStart(2, '0')}`
+  return `${start}–${end}`
+}
+
 export function buildPrecomputed(schedule) {
   const precomputed = {}
   for (const [name, sched] of Object.entries(schedule)) {

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { getDoctorShifts, calculateValidSwapsForDate, buildPrecomputed } from '../lib/swapRules.js'
+import { getDoctorShifts, calculateValidSwapsForDate, buildPrecomputed, getShiftTime } from '../lib/swapRules.js'
 import EmailModal from './EmailModal.jsx'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -45,7 +45,7 @@ function SwapOptionsModal({ partnersForDate, partnerDate, myDate, myShift, onClo
       <div className="bg-white rounded-xl shadow-xl p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-sm font-medium text-gray-800">Your shift: {formatDate(myDate)} — {myShift}</p>
+            <p className="text-sm font-medium text-gray-800">Your shift: {formatDate(myDate)} — {myShift}{getShiftTime(myShift) ? ` · ${getShiftTime(myShift)}` : ''}</p>
             <p className="text-xs text-gray-400 mt-1">Colleagues available on {formatDate(partnerDate)}</p>
           </div>
           <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-2xl leading-none ml-4 -mt-1">×</button>
@@ -59,7 +59,9 @@ function SwapOptionsModal({ partnersForDate, partnerDate, myDate, myShift, onClo
               >
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-sm font-medium text-gray-800">{swap.partnerName}</span>
-                  <span className="text-sm text-gray-400">{swap.partnerShift}</span>
+                  <span className="text-sm text-gray-400">
+                    {swap.partnerShift}{getShiftTime(swap.partnerShift) ? ` · ${getShiftTime(swap.partnerShift)}` : ''}
+                  </span>
                 </div>
                 <span className="text-gray-300 text-xs ml-2 shrink-0">{expandedIndex === i ? '▲' : '▼'}</span>
               </button>
