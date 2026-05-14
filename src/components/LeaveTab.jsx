@@ -9,7 +9,7 @@ function formatMonthHeader(year, month) {
 }
 
 function monthAbbr(year, month) {
-  return new Date(year, month - 1, 1).toLocaleString('en-GB', { month: 'short' }) + " '" + String(year).slice(2)
+  return new Date(year, month - 1, 1).toLocaleString('en-GB', { month: 'short' }) + ' ' + String(year)
 }
 
 function MonthCalendar({ year, month, dayMap, Today, onDayClick, lastDate }) {
@@ -189,23 +189,27 @@ export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRul
               className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-100 hover:border-gray-400 transition-colors"
             >
               Month
-              <span className="text-[10px]">{showMonthDropdown ? '▲' : '▾'}</span>
+              <span className="text-[10px]">{showMonthDropdown ? '▲' : '▼'}</span>
             </button>
             {showMonthDropdown && (
               <div className="mt-2 flex flex-col gap-0.5">
-                {monthGroups.map(({ year, month }, idx) => (
-                  <button
-                    key={`${year}-${month}`}
-                    onClick={() => { setCurrentMonthIdx(idx); setShowMonthDropdown(false) }}
-                    className={`text-xs text-left rounded-lg px-2 py-1.5 transition-colors ${
-                      idx === currentMonthIdx
-                        ? 'text-pink-500 bg-pink-50 font-semibold'
-                        : 'text-gray-500 hover:text-pink-500 hover:bg-pink-50'
-                    }`}
-                  >
-                    {monthAbbr(year, month)}
-                  </button>
-                ))}
+                {monthGroups.map(({ year, month }, idx) => {
+                  const [ty, tm] = Today.split('-').map(Number)
+                  if (year < ty || (year === ty && month < tm)) return null
+                  return (
+                    <button
+                      key={`${year}-${month}`}
+                      onClick={() => { setCurrentMonthIdx(idx); setShowMonthDropdown(false) }}
+                      className={`text-xs text-left rounded-lg px-2 py-1.5 transition-colors ${
+                        idx === currentMonthIdx
+                          ? 'text-pink-500 bg-pink-50 font-semibold'
+                          : 'text-gray-500 hover:text-pink-500 hover:bg-pink-50'
+                      }`}
+                    >
+                      {monthAbbr(year, month)}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -224,7 +228,7 @@ export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRul
               <button
                 onClick={() => setCurrentMonthIdx(i => Math.max(0, i - 1))}
                 disabled={currentMonthIdx === 0}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xl leading-none"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-3xl leading-none"
               >
                 ‹
               </button>
@@ -234,7 +238,7 @@ export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRul
               <button
                 onClick={() => setCurrentMonthIdx(i => Math.min(monthGroups.length - 1, i + 1))}
                 disabled={currentMonthIdx === monthGroups.length - 1}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xl leading-none"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-3xl leading-none"
               >
                 ›
               </button>

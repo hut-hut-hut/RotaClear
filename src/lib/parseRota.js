@@ -33,7 +33,7 @@ function dayNameFromISO(isoDate) {
 
 // ── Format fingerprints ────────────────────────────────────────────────────
 
-function isFormatSMH(rows) {
+function isFormatED(rows) {
   // Track codes like "1a", "2b" appear in row 2 (index 1)
   const trackRow = rows[1] || []
   return trackRow.some(cell => cell && /^\d+[ab]$/i.test(String(cell).trim()))
@@ -53,7 +53,7 @@ function isFormatGenMedSHO(rows) {
 
 // ── Format parsers ─────────────────────────────────────────────────────────
 
-function parseFormatSMH(rows) {
+function parseFormatED(rows) {
   const headerRow = rows[0] || []
   const trackRow = rows[1] || []
 
@@ -201,7 +201,7 @@ export async function parseRota(file) {
     const sheet = workbook.Sheets[sheetName]
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
 
-    if (isFormatSMH(rows)) return parseFormatSMH(rows)
+    if (isFormatED(rows)) return parseFormatED(rows)
     if (isFormatGenMedSHO(rows)) return parseFormatGenMedSHO(rows)
   }
 

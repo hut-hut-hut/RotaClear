@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { getDoctorShifts, calculateValidSwapsForDate, buildPrecomputed, getShiftTime } from '../lib/swapRules.js'
+import { getDoctorShifts, calculateValidSwapsForDate, buildPrecomputed, getShiftTime, findNightRuns, calculateValidSwapsForNightSubset } from '../lib/swapRules.js'
 import EmailModal from './EmailModal.jsx'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -9,7 +9,7 @@ function formatMonthHeader(year, month) {
 }
 
 function monthAbbr(year, month) {
-  return new Date(year, month - 1, 1).toLocaleString('en-GB', { month: 'short' }) + " '" + String(year).slice(2)
+  return new Date(year, month - 1, 1).toLocaleString('en-GB', { month: 'short' }) + ' ' + String(year)
 }
 
 function formatDate(isoDate) {
@@ -17,6 +17,11 @@ function formatDate(isoDate) {
   return new Date(year, month - 1, day).toLocaleDateString('en-GB', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   })
+}
+
+function formatDateShort(isoDate) {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
 function FatiguePopup({ onClose }) {
@@ -40,57 +45,80 @@ function FatiguePopup({ onClose }) {
 
 function SwapOptionsModal({ partnersForDate, partnerDate, myDate, myShift, onClose, onEmailSwap }) {
   const [expandedIndex, setExpandedIndex] = useState(null)
+
+  const isNightMode = partnersForDate.length > 0 && Array.isArray(partnersForDate[0].myDates)
+
+  const headerMyLabel = isNightMode
+    ? (() => {
+        const dates = partnersForDate[0].myDates
+        return `Your nights: ${formatDateShort(dates[0])}${dates.length > 1 ? ` – ${formatDateShort(dates[dates.length - 1])}` : ''}`
+      })()
+    : `Your shift: ${formatDate(myDate)} — ${myShift}${getShiftTime(myShift) ? ` · ${getShiftTime(myShift)}` : ''}`
+
+  const headerPartnerLabel = isNightMode
+    ? `Partners with nights containing ${formatDateShort(partnerDate)}`
+    : `Colleagues available on ${formatDate(partnerDate)}`
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-sm font-medium text-gray-800">Your shift: {formatDate(myDate)} — {myShift}{getShiftTime(myShift) ? ` · ${getShiftTime(myShift)}` : ''}</p>
-            <p className="text-xs text-gray-400 mt-1">Colleagues available on {formatDate(partnerDate)}</p>
+            <p className="text-sm font-medium text-gray-800">{headerMyLabel}</p>
+            <p className="text-xs text-gray-400 mt-1">{headerPartnerLabel}</p>
           </div>
           <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-2xl leading-none ml-4 -mt-1">×</button>
         </div>
         <div className="space-y-2">
-          {partnersForDate.map((swap, i) => (
-            <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
-              <button
-                className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                onClick={() => setExpandedIndex(expandedIndex === i ? null : i)}
-              >
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-sm font-medium text-gray-800">{swap.partnerName}</span>
-                  <span className="text-sm text-gray-400">
-                    {swap.partnerShift}{getShiftTime(swap.partnerShift) ? ` · ${getShiftTime(swap.partnerShift)}` : ''}
-                  </span>
-                </div>
-                <span className="text-gray-300 text-xs ml-2 shrink-0">{expandedIndex === i ? '▲' : '▼'}</span>
-              </button>
-              {expandedIndex === i && (
-                <div className="px-4 pb-4 pt-3 border-t border-gray-100">
-                  <p className="text-sm text-gray-600 mb-3">
-                    Please talk to this person to arrange the swap before reaching out to the Rota Coordinator.
-                  </p>
-                  <button
-                    onClick={() => onEmailSwap(swap)}
-                    className="px-4 py-2 text-sm bg-pink-500 hover:bg-pink-600 text-white rounded-xl transition-colors"
-                  >
-                    Generate email draft
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+          {partnersForDate.map((swap, i) => {
+            const partnerLabel = isNightMode
+              ? `${formatDateShort(swap.partnerDates[0])}${swap.partnerDates.length > 1 ? ` – ${formatDateShort(swap.partnerDates[swap.partnerDates.length - 1])}` : ''} · Night shift`
+              : `${swap.partnerShift}${getShiftTime(swap.partnerShift) ? ` · ${getShiftTime(swap.partnerShift)}` : ''}`
+
+            return (
+              <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  onClick={() => setExpandedIndex(expandedIndex === i ? null : i)}
+                >
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-medium text-gray-800">{swap.partnerName}</span>
+                    <span className="text-sm text-gray-400">{partnerLabel}</span>
+                  </div>
+                  <span className="text-gray-300 text-xs ml-2 shrink-0">{expandedIndex === i ? '▲' : '▼'}</span>
+                </button>
+                {expandedIndex === i && (
+                  <div className="px-4 pb-4 pt-3 border-t border-gray-100">
+                    <p className="text-sm text-gray-600 mb-3">
+                      Please talk to this person to arrange the swap before reaching out to the Rota Coordinator.
+                    </p>
+                    <button
+                      onClick={() => onEmailSwap(swap)}
+                      className="px-4 py-2 text-sm bg-pink-500 hover:bg-pink-600 text-white rounded-xl transition-colors"
+                    >
+                      Generate email draft
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
   )
 }
 
-function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, selectedDate, Today, onShiftClick, onNoSwapClick, onPartnerClick, lastDate }) {
+function SwapsCalendar({
+  year, month, shiftMap, swappableMap, partnerSwapsMap,
+  selectedDate, selectedNightDates, addableNightDates, nightPartnerSwapsMap,
+  Today, onShiftClick, onNoSwapClick, onPartnerClick, lastDate,
+}) {
   const firstDay = new Date(year, month - 1, 1)
   const daysInMonth = new Date(year, month, 0).getDate()
   const startOffset = (firstDay.getDay() + 6) % 7
   const hasSelection = !!selectedDate
+  const hasNightSelection = selectedNightDates && selectedNightDates.size > 0
 
   return (
     <div>
@@ -109,10 +137,6 @@ function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, s
           const isPast = isoDate < Today
           const isToday = isoDate === Today
           const shift = shiftMap[isoDate]
-          const isSelected = isoDate === selectedDate
-          const partnerOptions = hasSelection ? (partnerSwapsMap[isoDate] ?? null) : null
-          const isPartner = partnerOptions && partnerOptions.length > 0
-          const canSwap = swappableMap[isoDate]
 
           if (lastDate && isoDate > lastDate) {
             return <div key={isoDate} className="h-[calc((100vh-17rem)/6)]" />
@@ -138,7 +162,70 @@ function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, s
             )
           }
 
-          // Selected cell — highlighted blue
+          // ── Night multi-select mode ──────────────────────────────────────
+
+          // Night that is currently selected → gray
+          if (hasNightSelection && selectedNightDates.has(isoDate)) {
+            return (
+              <div
+                key={isoDate}
+                onClick={() => onShiftClick(isoDate)}
+                className="h-[calc((100vh-17rem)/6)] rounded-lg p-1 flex flex-col items-center cursor-pointer transition-all duration-200 bg-gray-100 border-2 border-gray-300 shadow-md scale-[1.03]"
+              >
+                <span className="text-sm font-bold text-gray-700 mt-0.5">{dayNum}</span>
+                <span className="text-xs leading-tight text-center mt-0.5 break-all text-gray-500">{shift}</span>
+              </div>
+            )
+          }
+
+          // Night partner block in night mode → green with count
+          const nightPartnerOptions = hasNightSelection ? (nightPartnerSwapsMap[isoDate] ?? null) : null
+          if (nightPartnerOptions && nightPartnerOptions.length > 0) {
+            return (
+              <div
+                key={isoDate}
+                onClick={() => onPartnerClick(isoDate)}
+                className="h-[calc((100vh-17rem)/6)] rounded-lg p-1 flex flex-col items-center cursor-pointer transition-all duration-200 bg-green-50 border border-green-200 hover:bg-green-100 hover:shadow-md hover:-translate-y-0.5"
+              >
+                <span className="text-sm font-semibold text-green-700">{dayNum}</span>
+                <span className="text-xs leading-tight text-center mt-0.5 text-green-500">
+                  {nightPartnerOptions.length} option{nightPartnerOptions.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )
+          }
+
+          // Addable night (same run, not yet selected) → green, click to add
+          if (hasNightSelection && addableNightDates.has(isoDate)) {
+            return (
+              <div
+                key={isoDate}
+                onClick={() => onShiftClick(isoDate)}
+                className="h-[calc((100vh-17rem)/6)] rounded-lg p-1 flex flex-col items-center cursor-pointer transition-all duration-200 bg-green-50 border border-green-200 hover:bg-green-100 hover:shadow-md hover:-translate-y-0.5"
+              >
+                <span className="text-sm font-semibold text-green-700">{dayNum}</span>
+                <span className="text-sm leading-tight text-center mt-0.5 break-all text-green-500">{shift}</span>
+              </div>
+            )
+          }
+
+          // Everything else in night mode → dimmed
+          if (hasNightSelection) {
+            return (
+              <div key={isoDate} className="h-[calc((100vh-17rem)/6)] rounded-lg p-1 flex flex-col items-center bg-white border border-gray-100 transition-all duration-200">
+                <span className="text-sm font-medium text-gray-200">{dayNum}</span>
+                {shift && <span className="text-xs leading-tight text-center mt-0.5 break-all text-gray-100">{shift}</span>}
+              </div>
+            )
+          }
+
+          // ── Single-shift mode (existing logic) ───────────────────────────
+
+          const isSelected = isoDate === selectedDate
+          const partnerOptions = hasSelection ? (partnerSwapsMap[isoDate] ?? null) : null
+          const isPartner = partnerOptions && partnerOptions.length > 0
+          const canSwap = swappableMap[isoDate]
+
           if (isSelected) {
             return (
               <div
@@ -152,7 +239,6 @@ function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, s
             )
           }
 
-          // Partner date — green, clickable
           if (isPartner) {
             return (
               <div
@@ -168,7 +254,6 @@ function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, s
             )
           }
 
-          // No shift on this day
           if (!shift) {
             return (
               <div key={isoDate} className="h-[calc((100vh-17rem)/6)] rounded-lg p-1 flex flex-col items-center bg-white border border-gray-100 transition-all duration-200">
@@ -177,7 +262,6 @@ function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, s
             )
           }
 
-          // Future shift, nothing selected → green/red
           if (!hasSelection) {
             if (canSwap) {
               return (
@@ -203,7 +287,6 @@ function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, s
             )
           }
 
-          // Future shift, something else selected → dimmed, still clickable to switch selection
           if (canSwap) {
             return (
               <div
@@ -230,6 +313,8 @@ function SwapsCalendar({ year, month, shiftMap, swappableMap, partnerSwapsMap, s
 
 export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
   const [selectedDate, setSelectedDate] = useState(null)
+  const [selectedNightDates, setSelectedNightDates] = useState(null) // Set<string> | null
+  const [nightRunRef, setNightRunRef] = useState(null)               // string[] | null
   const [partnerPopupDate, setPartnerPopupDate] = useState(null)
   const [emailSwap, setEmailSwap] = useState(null)
   const [showFatiguePopup, setShowFatiguePopup] = useState(false)
@@ -264,6 +349,47 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
     }
     return map
   }, [myShifts, Today, selectedDoctor, rotaData.schedule, precomputed])
+
+  const nightRunMap = useMemo(() => {
+    const map = new Map()
+    for (const run of findNightRuns(selectedDoctor, rotaData.schedule)) {
+      if (run.length > 1) {
+        for (const date of run) map.set(date, run)
+      }
+    }
+    return map
+  }, [selectedDoctor, rotaData.schedule])
+
+  const addableNightDates = useMemo(() => {
+    if (!nightRunRef || !selectedNightDates) return new Set()
+    return new Set(nightRunRef.filter(d => !selectedNightDates.has(d)))
+  }, [nightRunRef, selectedNightDates])
+
+  // Compute night swaps only when selection is non-empty and contiguous
+  const nightSwaps = useMemo(() => {
+    if (!selectedNightDates || selectedNightDates.size === 0) return null
+    const sorted = [...selectedNightDates].sort()
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const diff = (new Date(sorted[i + 1] + 'T00:00:00Z') - new Date(sorted[i] + 'T00:00:00Z')) / 86400000
+      if (diff !== 1) return []
+    }
+    return calculateValidSwapsForNightSubset(selectedDoctor, rotaData.schedule, sorted, precomputed)
+  }, [selectedNightDates, selectedDoctor, rotaData.schedule, precomputed])
+
+  // Map every date in every partner block so the whole block is clickable on the calendar
+  const nightPartnerSwapsMap = useMemo(() => {
+    if (!nightSwaps) return {}
+    const map = {}
+    for (const swap of nightSwaps) {
+      for (const d of swap.partnerDates) {
+        if (!map[d]) map[d] = []
+        if (!map[d].find(s => s.partnerName === swap.partnerName && s.partnerDates[0] === swap.partnerDates[0])) {
+          map[d].push(swap)
+        }
+      }
+    }
+    return map
+  }, [nightSwaps])
 
   const lastShiftDate = useMemo(() => {
     if (!myShifts.length) return null
@@ -308,7 +434,51 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
     setCurrentMonthIdx(idx >= 0 ? idx : 0)
   }, [monthGroups])
 
+  function clearAll() {
+    setSelectedDate(null)
+    setSelectedNightDates(null)
+    setNightRunRef(null)
+    setPartnerPopupDate(null)
+  }
+
   function handleShiftClick(date) {
+    const run = nightRunMap.get(date)
+
+    if (run) {
+      // Clicked a night that belongs to a multi-night run
+      setSelectedDate(null)
+      setPartnerPopupDate(null)
+
+      const isSameRun = nightRunRef && nightRunRef[0] === run[0]
+
+      if (!isSameRun) {
+        // Start fresh selection on this run
+        setNightRunRef(run)
+        setSelectedNightDates(new Set([date]))
+        return
+      }
+
+      // Toggle within current run
+      setSelectedNightDates(prev => {
+        const next = new Set(prev)
+        if (next.has(date)) {
+          next.delete(date)
+          if (next.size === 0) {
+            setNightRunRef(null)
+            return null
+          }
+        } else {
+          next.add(date)
+        }
+        return next
+      })
+      return
+    }
+
+    // Non-night or single-isolated-night: clear night mode, use single-shift flow
+    setSelectedNightDates(null)
+    setNightRunRef(null)
+
     if (date === selectedDate) {
       setSelectedDate(null)
     } else if (swappableMap[date]) {
@@ -319,8 +489,24 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
     }
   }
 
+  const hasNightSelection = selectedNightDates && selectedNightDates.size > 0
+  const hasAnySelection = !!selectedDate || hasNightSelection
   const currentMonth = monthGroups[currentMonthIdx]
   const selectedShift = selectedDate ? (shiftMap[selectedDate] ?? '') : ''
+
+  // Active partner map — night mode or single mode
+  const activePartnerSwapsMap = hasNightSelection ? nightPartnerSwapsMap : partnerSwapsMap
+  const activeSwapCount = hasNightSelection
+    ? (nightSwaps ? nightSwaps.length : null)
+    : (swaps ? swaps.length : null)
+
+  // Sidebar description for night selection
+  const nightSelectionLabel = useMemo(() => {
+    if (!selectedNightDates || selectedNightDates.size === 0) return ''
+    const sorted = [...selectedNightDates].sort()
+    if (sorted.length === 1) return formatDate(sorted[0])
+    return `${formatDateShort(sorted[0])} – ${formatDateShort(sorted[sorted.length - 1])} (${sorted.length} nights)`
+  }, [selectedNightDates])
 
   return (
     <div className="flex gap-8">
@@ -328,29 +514,44 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
       <div className="w-44 shrink-0">
         <div className="sticky top-[140px] flex flex-col gap-6">
 
-          {selectedDate ? (
+          {hasAnySelection ? (
             <>
               <div>
                 <button
-                  onClick={() => setSelectedDate(null)}
+                  onClick={clearAll}
                   className="text-sm text-pink-500 hover:text-pink-600 flex items-center gap-1 mb-3 transition-colors"
                 >
                   ← Clear selection
                 </button>
-                <p className="text-xs font-medium text-gray-700 leading-snug">{formatDate(selectedDate)}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{selectedShift}</p>
-                {swaps && swaps.length === 0 && (
+                {hasNightSelection ? (
+                  <>
+                    <p className="text-xs font-medium text-gray-700 leading-snug">{nightSelectionLabel}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Night shift</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-medium text-gray-700 leading-snug">{formatDate(selectedDate)}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{selectedShift}</p>
+                  </>
+                )}
+                {activeSwapCount === 0 && (
                   <p className="text-xs text-gray-400 mt-2">No valid swap partners found.</p>
                 )}
-                {swaps && swaps.length > 0 && (
+                {activeSwapCount > 0 && (
                   <p className="text-xs text-gray-400 mt-2">Navigate months to find swap partners.</p>
                 )}
               </div>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-300 shrink-0" />
-                  <span className="text-xs text-gray-600">Selected shift</span>
+                  <span className="text-xs text-gray-600">Selected shift{hasNightSelection ? 's' : ''}</span>
                 </div>
+                {hasNightSelection && (
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-3 h-3 rounded-sm bg-green-50 border border-green-200 shrink-0" />
+                    <span className="text-xs text-gray-600">Click to add to set</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2.5">
                   <div className="w-3 h-3 rounded-sm bg-green-50 border border-green-200 shrink-0" />
                   <span className="text-xs text-gray-600">Available to swap</span>
@@ -376,23 +577,27 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
               className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-100 hover:border-gray-400 transition-colors"
             >
               Month
-              <span className="text-[10px]">{showMonthDropdown ? '▲' : '▾'}</span>
+              <span className="text-[10px]">{showMonthDropdown ? '▲' : '▼'}</span>
             </button>
             {showMonthDropdown && (
               <div className="mt-2 flex flex-col gap-0.5">
-                {monthGroups.map(({ year, month }, idx) => (
-                  <button
-                    key={`${year}-${month}`}
-                    onClick={() => { setCurrentMonthIdx(idx); setShowMonthDropdown(false) }}
-                    className={`text-xs text-left rounded-lg px-2 py-1.5 transition-colors ${
-                      idx === currentMonthIdx
-                        ? 'text-pink-500 bg-pink-50 font-semibold'
-                        : 'text-gray-500 hover:text-pink-500 hover:bg-pink-50'
-                    }`}
-                  >
-                    {monthAbbr(year, month)}
-                  </button>
-                ))}
+                {monthGroups.map(({ year, month }, idx) => {
+                  const [ty, tm] = Today.split('-').map(Number)
+                  if (year < ty || (year === ty && month < tm)) return null
+                  return (
+                    <button
+                      key={`${year}-${month}`}
+                      onClick={() => { setCurrentMonthIdx(idx); setShowMonthDropdown(false) }}
+                      className={`text-xs text-left rounded-lg px-2 py-1.5 transition-colors ${
+                        idx === currentMonthIdx
+                          ? 'text-pink-500 bg-pink-50 font-semibold'
+                          : 'text-gray-500 hover:text-pink-500 hover:bg-pink-50'
+                      }`}
+                    >
+                      {monthAbbr(year, month)}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -429,6 +634,9 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
               swappableMap={swappableMap}
               partnerSwapsMap={partnerSwapsMap}
               selectedDate={selectedDate}
+              selectedNightDates={selectedNightDates}
+              addableNightDates={addableNightDates}
+              nightPartnerSwapsMap={nightPartnerSwapsMap}
               Today={Today}
               onShiftClick={handleShiftClick}
               onNoSwapClick={() => setShowFatiguePopup(true)}
@@ -443,7 +651,7 @@ export default function SwapsTab({ selectedDoctor, rotaData, isActive }) {
 
       {partnerPopupDate && (
         <SwapOptionsModal
-          partnersForDate={partnerSwapsMap[partnerPopupDate] || []}
+          partnersForDate={activePartnerSwapsMap[partnerPopupDate] || []}
           partnerDate={partnerPopupDate}
           myDate={selectedDate}
           myShift={selectedShift}

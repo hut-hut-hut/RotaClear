@@ -11,7 +11,11 @@ export default function EmailModal({ swap, selectedDoctor, onClose }) {
   const [copied, setCopied] = useState(false)
 
   const toAddress = 'imperial.smhed-shorota@nhs.net'
-  const emailBody = `Dear Rota Coordinator,\n\nI would like to arrange a shift swap with ${swap.partnerName}.\n\nMy shift: ${formatDateLong(swap.myDate)} (${swap.myShift})\n${swap.partnerName}'s shift: ${formatDateLong(swap.partnerDate)} (${swap.partnerShift})\n\nPlease could you arrange this swap? Let me know if you have any questions.\n\n${selectedDoctor}`
+
+  const isMultiNight = Array.isArray(swap.myDates)
+  const emailBody = isMultiNight
+    ? `Dear Rota Coordinator,\n\nI would like to arrange a night shift swap with ${swap.partnerName}.\n\nMy shifts:\n${swap.myDates.map((d, i) => `- ${formatDateLong(d)} (${swap.myShifts[i]})`).join('\n')}\n\n${swap.partnerName}'s shifts:\n${swap.partnerDates.map((d, i) => `- ${formatDateLong(d)} (${swap.partnerShifts[i]})`).join('\n')}\n\nPlease could you arrange this swap? Let me know if you have any questions.\n\n${selectedDoctor}`
+    : `Dear Rota Coordinator,\n\nI would like to arrange a shift swap with ${swap.partnerName}.\n\nMy shift: ${formatDateLong(swap.myDate)} (${swap.myShift})\n${swap.partnerName}'s shift: ${formatDateLong(swap.partnerDate)} (${swap.partnerShift})\n\nPlease could you arrange this swap? Let me know if you have any questions.\n\n${selectedDoctor}`
   const fullText = `To: ${toAddress}\n\n${emailBody}`
 
   function handleCopy() {

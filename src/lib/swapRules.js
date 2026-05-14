@@ -447,3 +447,175 @@ export function getDiagnostics(doctor, schedule, targetDate, precomputed) {
 
   return diagnostics.sort((a, b) => a.partnerDate.localeCompare(b.partnerDate))
 }
+
+// Returns all runs of consecutive night shifts for a doctor as arrays of ISO date strings.
+export function findNightRuns(doctor, schedule) {
+  const sched = schedule[doctor] || {}
+  const nights = Object.entries(sched)
+    .filter(([, e]) => isNightShift(String(e.shift || '')))
+    .map(([date]) => date)
+    .sort()
+
+  const runs = []
+  let i = 0
+  while (i < nights.length) {
+    let j = i
+    while (j + 1 < nights.length) {
+      const diff = (new Date(nights[j + 1] + 'T00:00:00Z') - new Date(nights[j] + 'T00:00:00Z')) / 86400000
+      if (diff === 1) j++
+      else break
+    }
+    runs.push(nights.slice(i, j + 1))
+    i = j + 1
+  }
+  return runs
+}
+
+// Fatigue validation for multi-date swaps.
+// Scopes checks to the neighbourhood of affected dates (mirrors validateFatigueWithSwap).
+function validateFatigueMultiSwap(baseShifts, baseEntries, removedDates, insertedEntries) {
+  const removedSet = new Set(removedDates)
+  const insertedMap = new Map(insertedEntries.map(e => [e.date, e]))
+
+  // Build post-swap shifts
+  const newShifts = []
+  for (const s of baseShifts) {
+    if (removedSet.has(s.date) || insertedMap.has(s.date)) continue
+    newShifts.push(s)
+  }
+  for (const e of insertedEntries) newShifts.push({ ...e })
+  newShifts.sort((a, b) => a.startMins - b.startMins)
+
+  // Affected dates = inserted + original neighbours of each removed date
+  const affectedDates = new Set(insertedEntries.map(e => e.date))
+  for (const rd of removedDates) {
+    const idx = baseShifts.findIndex(s => s.date === rd)
+    if (idx > 0) affectedDates.add(baseShifts[idx - 1].date)
+    if (idx >= 0 && idx < baseShifts.length - 1) affectedDates.add(baseShifts[idx + 1].date)
+  }
+
+  // Rule 1: ≥11h gap — pairs touching affected dates
+  for (let i = 0; i < newShifts.length - 1; i++) {
+    if (affectedDates.has(newShifts[i].date) || affectedDates.has(newShifts[i + 1].date)) {
+      if (newShifts[i + 1].startMins - newShifts[i].endMins < 11 * 60) return false
+    }
+  }
+
+  // Rule 2: ≥48h after nights — runs touching affected dates
+  let i = 0
+  while (i < newShifts.length) {
+    if (isNightShift(newShifts[i].shift)) {
+      let j = i
+      while (j + 1 < newShifts.length && isNightShift(newShifts[j + 1].shift)) j++
+      if (j + 1 < newShifts.length) {
+        const touches = newShifts.slice(i, j + 1).some(s => affectedDates.has(s.date)) ||
+          affectedDates.has(newShifts[j + 1].date)
+        if (touches && newShifts[j + 1].startMins - newShifts[j].endMins < 48 * 60) return false
+      }
+      i = j + 1
+    } else { i++ }
+  }
+
+  // Rule 3: ≤7 consecutive — runs containing affected dates
+  const entriesMap = new Map(baseEntries)
+  const allDates = [...new Set([
+    ...baseEntries.map(([d]) => d),
+    ...insertedEntries.map(e => e.date),
+  ])].sort()
+
+  let consecutive = 0
+  let inAffectedRun = false
+  let maxInAffected = 0
+
+  for (const date of allDates) {
+    let shift
+    if (removedSet.has(date)) shift = ''
+    else if (insertedMap.has(date)) shift = insertedMap.get(date).shift
+    else { const e = entriesMap.get(date); shift = e ? e.shift : '' }
+
+    if (isShift(shift)) {
+      consecutive++
+      if (affectedDates.has(date)) inAffectedRun = true
+      if (inAffectedRun) maxInAffected = consecutive
+    } else {
+      if (inAffectedRun && maxInAffected > 7) return false
+      consecutive = 0; inAffectedRun = false; maxInAffected = 0
+    }
+  }
+  if (inAffectedRun && maxInAffected > 7) return false
+
+  return true
+}
+
+// Finds valid swap partners for a contiguous subset of consecutive night shifts.
+// selectedDates must be sorted ISO strings for consecutive nights the doctor wants to give up.
+export function calculateValidSwapsForNightSubset(doctor, schedule, selectedDates, precomputed) {
+  if (!selectedDates || selectedDates.length === 0) return []
+
+  const sorted = [...selectedDates].sort()
+
+  // Verify contiguity
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const diff = (new Date(sorted[i + 1] + 'T00:00:00Z') - new Date(sorted[i] + 'T00:00:00Z')) / 86400000
+    if (diff !== 1) return []
+  }
+
+  const pc = precomputed || buildPrecomputed(schedule)
+  const { shifts: myShifts, entries: myEntries } = pc[doctor] || { shifts: [], entries: [] }
+
+  const mySelected = sorted.map(date => myShifts.find(s => s.date === date)).filter(Boolean)
+  if (mySelected.length !== sorted.length) return []
+
+  const _now = new Date()
+  const todayISO = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`
+  if (sorted[0] <= todayISO) return []
+
+  const selectedSet = new Set(sorted)
+  const myOccupied = new Set(myShifts.filter(s => !selectedSet.has(s.date)).map(s => s.date))
+  const n = sorted.length
+  const results = []
+
+  for (const partnerName of Object.keys(schedule)) {
+    if (partnerName === doctor) continue
+    const { shifts: partnerShifts, entries: partnerEntries } = pc[partnerName] || { shifts: [], entries: [] }
+
+    const partnerNights = partnerShifts.filter(s => isNightShift(s.shift) && s.date > todayISO)
+
+    for (let start = 0; start <= partnerNights.length - n; start++) {
+      // Verify this window of n nights is consecutive
+      let contiguous = true
+      for (let k = 0; k < n - 1; k++) {
+        const diff = (new Date(partnerNights[start + k + 1].date + 'T00:00:00Z') - new Date(partnerNights[start + k].date + 'T00:00:00Z')) / 86400000
+        if (diff !== 1) { contiguous = false; break }
+      }
+      if (!contiguous) continue
+
+      const pSubset = partnerNights.slice(start, start + n)
+      const pDates = pSubset.map(s => s.date)
+      const pDateSet = new Set(pDates)
+
+      // No date conflicts
+      if (pDates.some(d => myOccupied.has(d))) continue
+      const partnerOccupied = new Set(partnerShifts.filter(s => !pDateSet.has(s.date)).map(s => s.date))
+      if (sorted.some(d => partnerOccupied.has(d))) continue
+
+      const myInserted = pSubset.map(s => ({ date: s.date, shift: s.shift, startMins: s.startMins, endMins: s.endMins }))
+      const partnerInserted = mySelected.map(s => ({ date: s.date, shift: s.shift, startMins: s.startMins, endMins: s.endMins }))
+
+      if (
+        validateFatigueMultiSwap(myShifts, myEntries, sorted, myInserted) &&
+        validateFatigueMultiSwap(partnerShifts, partnerEntries, pDates, partnerInserted)
+      ) {
+        results.push({
+          myDates: sorted,
+          myShifts: mySelected.map(s => s.shift),
+          partnerName,
+          partnerDates: pDates,
+          partnerShifts: pSubset.map(s => s.shift),
+        })
+      }
+    }
+  }
+
+  return results
+}
