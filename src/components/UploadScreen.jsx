@@ -81,11 +81,11 @@ export default function UploadScreen({ onRotaLoaded }) {
             <input
               ref={inputRef}
               type="file"
-              accept=".xls,.xlsx"
+              accept=".xls,.xlsx,.csv"
               onChange={handleChange}
               className="hidden"
             />
-            <p className="mt-4 text-gray-400 text-sm">Accepts .xls and .xlsx files only</p>
+            <p className="mt-4 text-gray-400 text-sm">Accepts .xls, .xlsx, and .csv files</p>
             {status === 'error' && (
               <p className="mt-4 text-red-500 text-sm">{errorMessage}</p>
             )}

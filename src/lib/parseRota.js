@@ -190,12 +190,18 @@ function parseFormatGenMedSHO(rows) {
 
 export async function parseRota(file) {
   const ext = file.name.split('.').pop().toLowerCase()
-  if (ext !== 'xls' && ext !== 'xlsx') {
-    throw new Error('Please upload the document in an Excel format.')
+  if (ext !== 'xls' && ext !== 'xlsx' && ext !== 'csv') {
+    throw new Error('Please upload the document in an Excel or CSV format.')
   }
 
-  const buffer = await file.arrayBuffer()
-  const workbook = XLSX.read(buffer, { type: 'array' })
+  let workbook
+  if (ext === 'csv') {
+    const text = await file.text()
+    workbook = XLSX.read(text, { type: 'string' })
+  } else {
+    const buffer = await file.arrayBuffer()
+    workbook = XLSX.read(buffer, { type: 'array' })
+  }
 
   for (const sheetName of workbook.SheetNames) {
     const sheet = workbook.Sheets[sheetName]
