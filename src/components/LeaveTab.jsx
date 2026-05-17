@@ -106,7 +106,7 @@ function MonthCalendar({ year, month, dayMap, Today, onDayClick, lastDate }) {
   )
 }
 
-export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRules }) {
+export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRules, onChangeUser, onRemoveRota }) {
   const [selectedDay, setSelectedDay] = useState(null)
   const [showMonthDropdown, setShowMonthDropdown] = useState(false)
   const [currentMonthIdx, setCurrentMonthIdx] = useState(0)
@@ -168,6 +168,15 @@ export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRul
       {/* Left sidebar: key + month dropdown */}
       <div className="w-44 shrink-0">
         <div className="sticky top-[140px] flex flex-col gap-6">
+          <button
+            onClick={onChangeUser}
+            className="group flex items-center text-sm text-gray-600 border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-100 hover:border-gray-400 transition-colors self-start"
+          >
+            <span className="inline-flex items-center overflow-hidden w-0 group-hover:w-5 transition-[width] duration-300 ease-out h-[1.2em]">
+              <span className="translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-out shrink-0 pr-1.5">←</span>
+            </span>
+            Rota selection
+          </button>
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
               <div className="w-3 h-3 rounded-sm bg-green-50 border border-green-200 shrink-0" />
@@ -213,6 +222,16 @@ export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRul
               </div>
             )}
           </div>
+
+          <button
+            onClick={onRemoveRota}
+            className="group flex items-center text-sm text-gray-600 border border-gray-300 rounded-full px-3 py-1 hover:font-semibold hover:bg-red-500 hover:border-red-500 hover:text-white transition-colors self-start mt-6"
+          >
+            Remove Rota
+            <span className="inline-flex items-center overflow-hidden w-0 group-hover:w-6 transition-[width] duration-300 ease-out h-[1.2em]">
+              <span className="translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-out shrink-0 pl-1.5 text-white font-bold text-base">×</span>
+            </span>
+          </button>
         </div>
       </div>
 
@@ -228,9 +247,9 @@ export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRul
               <button
                 onClick={() => setCurrentMonthIdx(i => Math.max(0, i - 1))}
                 disabled={currentMonthIdx === 0}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-3xl leading-none"
+                className="w-6 h-6 grid place-items-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                ‹
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6L6 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
               <h2 className="text-base font-semibold text-gray-800">
                 {formatMonthHeader(currentMonth.year, currentMonth.month)}
@@ -238,9 +257,9 @@ export default function LeaveTab({ selectedDoctor, rotaData, isActive, onGoToRul
               <button
                 onClick={() => setCurrentMonthIdx(i => Math.min(monthGroups.length - 1, i + 1))}
                 disabled={currentMonthIdx === monthGroups.length - 1}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-3xl leading-none"
+                className="w-6 h-6 grid place-items-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                ›
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>
 

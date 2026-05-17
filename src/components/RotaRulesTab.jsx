@@ -24,6 +24,7 @@ export default function RotaRulesTab() {
           48 hours post-nights, or more than 7 consecutive days of shifts, as these break
           the requirements of the 2016 contract
         </li>
+        <li>Night shifts can only be swapped with other night shifts</li>
         <li>
           Email all rota swaps or rota queries to{' '}
           <a
